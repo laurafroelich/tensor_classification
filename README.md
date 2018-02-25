@@ -13,6 +13,8 @@ ManOpt for optimisation over manifolds in Matlab
 
 Tensor manipulation code by Morten Mørup, available at http://www.imm.dtu.dk/~mm/downloads/CPandTucker.zip
 
+immoptibox http://www2.imm.dtu.dk/projects/immoptibox/
+
 # References
 [1] Shuicheng Yan, Dong Xu, Qiang Yang, Lei Zhang, Xiaoou Tang and Hong-Jiang Zhang, "Discriminant analysis with tensor representation," 2005 IEEE Computer Society Conference on Computer Vision and Pattern Recognition (CVPR'05), 2005, pp. 526-532 vol. 1.
 doi: 10.1109/CVPR.2005.131
