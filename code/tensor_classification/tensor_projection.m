@@ -25,7 +25,7 @@ for isample = 1:nsamples
     if is_cell_data
         Xprojection = Xs{isample};
     else
-        Xprojection = Xs(isample,:);
+        Xprojection = reshape(Xs(isample,:), y_mat_size(1:end-1));
     end
     
     for jmode = 1:nmodes % do multiplication between Xi tensor and U matrices
@@ -38,7 +38,7 @@ for isample = 1:nsamples
     end
     
     if ~is_cell_data
-        Xprojections = permute(Xprojections, [2:(n_modes+1), 1]);
+        Xprojections = permute(Xprojections, [2:(nmodes+1), 1]);
     end
     
 end
