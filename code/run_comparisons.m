@@ -14,6 +14,10 @@ x_train_cell = mat_to_cell(x_train);
 x_test_cell = mat_to_cell(x_test);
 
 ncomps = 2;
-auc_lda = get_vectorised_lda_auc(x_train, x_test, y_train, y_test)
-auc_dgtda = get_dgtda_auc(x_train_cell, x_test_cell, y_train, y_test, ncomps)
+auc_lda = get_vectorised_lda_auc(x_train, x_test, y_train, y_test);
+auc_dgtda = heuristic_project_predict(@DGTDA, x_train_cell, x_test_cell, y_train, y_test, ncomps);
+auc_dater = heuristic_project_predict(@DATER, x_train_cell, x_test_cell, y_train, y_test, ncomps);
+auc_datereig = heuristic_project_predict(@DATEReig, x_train_cell, x_test_cell, y_train, y_test, ncomps);
+auc_cmda = heuristic_project_predict(@CMDA, x_train_cell, x_test_cell, y_train, y_test, ncomps);
+
 
