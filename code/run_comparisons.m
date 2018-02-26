@@ -26,5 +26,9 @@ auc_ManPDA_normsratio = manifold_project_predict(@ManPDA_normsratio, x_train_cel
 auc_ManTDA_normsratio = manifold_project_predict(@ManTDA_normsratio, x_train_cell, x_test_cell, y_train, y_test, ncomps);
 auc_BDCA = direct_predict(@bilinear_logreg, x_train_cell, x_test_cell, y_train, y_test, ncomps);
 auc_BDCA_tucker = direct_predict(@bilinear_logreg_tucker, x_train_cell, x_test_cell, y_train, y_test, ncomps);
+auc_tucker = decompose_predict(@tucker_decompose, x_train, x_test, y_train, y_test, ncomps);
+auc_parafac = decompose_predict(@parafac_decompose, x_train, x_test, y_train, y_test, ncomps);
+auc_tucker2 = decompose_predict(@tucker2_decompose, x_train, x_test, y_train, y_test, ncomps);
+auc_parafac2 = decompose_predict(@parafac2_decompose, x_train, x_test, y_train, y_test, ncomps);
 
 

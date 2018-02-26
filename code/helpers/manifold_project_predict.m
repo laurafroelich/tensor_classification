@@ -27,7 +27,11 @@ end
 
 Us = results{best_solution}.Us;
 
-predictions = project_and_predict(x_train, x_test, y_train, y_test, ncomps, Us);
+if isequal(fun, @ManPDA_normsratio) || isequal(fun, @ManPDA)
+predictions = project_and_predict(x_train, x_test, y_train, y_test, ncomps, Us, true);
+else
+predictions = project_and_predict(x_train, x_test, y_train, y_test, ncomps, Usxs);    
+end
 
 [~, ~, ~, auc] = perfcurve(y_test, predictions(:, 2), 2);
 
