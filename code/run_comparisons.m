@@ -2,33 +2,73 @@ clear
 addpath(genpath('code/'))
 addpath('../matlab_additions/immoptibox/')
 
-n_rows = 2;
-n_cols = 3;
-n_train_obs = 5;
-n_test_obs = 10;
+n_rows = 10;
+n_cols = 20;
+
+trainobs = [10, 20, 50, 100, 200, 400, 500];
+
+for i = 1:length(trainobs)
+ncomps = 3;
+
+n_train_obs = trainobs(i);
+n_test_obs = 100;
+n_true_comps = 5;
 
 %x_train, y_train = 
-[x_train, y_train] = simulate_data(n_train_obs, n_rows, n_cols);
+[x_train, y_train] = simulate_data(n_train_obs, n_rows, n_cols, n_true_comps);
 x_train_cell = mat_to_cell(x_train);
 
-[x_test, y_test] = simulate_data(n_test_obs, n_rows, n_cols);
+[x_test, y_test] = simulate_data(n_test_obs, n_rows, n_cols, n_true_comps);
 x_test_cell = mat_to_cell(x_test);
 
-ncomps = 2;
-auc_lda = get_vectorised_lda_auc(x_train, x_test, y_train, y_test);
-auc_dgtda = heuristic_project_predict(@DGTDA, x_train_cell, x_test_cell, y_train, y_test, ncomps);
-auc_dater = heuristic_project_predict(@DATER, x_train_cell, x_test_cell, y_train, y_test, ncomps);
-auc_datereig = heuristic_project_predict(@DATEReig, x_train_cell, x_test_cell, y_train, y_test, ncomps);
-auc_cmda = heuristic_project_predict(@CMDA, x_train_cell, x_test_cell, y_train, y_test, ncomps);
-auc_ManPDA = manifold_project_predict(@ManPDA, x_train_cell, x_test_cell, y_train, y_test, ncomps);
-auc_ManTDA = manifold_project_predict(@ManTDA, x_train_cell, x_test_cell, y_train, y_test, ncomps);
-auc_ManPDA_normsratio = manifold_project_predict(@ManPDA_normsratio, x_train_cell, x_test_cell, y_train, y_test, ncomps);
-auc_ManTDA_normsratio = manifold_project_predict(@ManTDA_normsratio, x_train_cell, x_test_cell, y_train, y_test, ncomps);
-auc_BDCA = direct_predict(@bilinear_logreg, x_train_cell, x_test_cell, y_train, y_test, ncomps);
-auc_BDCA_tucker = direct_predict(@bilinear_logreg_tucker, x_train_cell, x_test_cell, y_train, y_test, ncomps);
-auc_tucker = decompose_predict(@tucker_decompose, x_train, x_test, y_train, y_test, ncomps);
-auc_parafac = decompose_predict(@parafac_decompose, x_train, x_test, y_train, y_test, ncomps);
-auc_tucker2 = decompose_predict(@tucker2_decompose, x_train, x_test, y_train, y_test, ncomps);
-auc_parafac2 = decompose_predict(@parafac2_decompose, x_train, x_test, y_train, y_test, ncomps);
+auc_lda(i) = get_vectorised_lda_auc(x_train, x_test, y_train, y_test);
+auc_dgtda(i) = heuristic_project_predict(@DGTDA, x_train_cell, x_test_cell, y_train, y_test, ncomps);
+auc_dater(i) = heuristic_project_predict(@DATER, x_train_cell, x_test_cell, y_train, y_test, ncomps);
+auc_datereig(i) = heuristic_project_predict(@DATEReig, x_train_cell, x_test_cell, y_train, y_test, ncomps);
+auc_cmda(i) = heuristic_project_predict(@CMDA, x_train_cell, x_test_cell, y_train, y_test, ncomps);
+auc_ManPDA(i) = manifold_project_predict(@ManPDA, x_train_cell, x_test_cell, y_train, y_test, ncomps);
+auc_ManTDA(i) = manifold_project_predict(@ManTDA, x_train_cell, x_test_cell, y_train, y_test, ncomps);
+auc_ManPDA_normsratio(i) = manifold_project_predict(@ManPDA_normsratio, x_train_cell, x_test_cell, y_train, y_test, ncomps);
+auc_ManTDA_normsratio(i) = manifold_project_predict(@ManTDA_normsratio, x_train_cell, x_test_cell, y_train, y_test, ncomps);
+auc_BDCA(i) = direct_predict(@bilinear_logreg, x_train_cell, x_test_cell, y_train, y_test, ncomps);
+auc_BDCA_tucker(i) = direct_predict(@bilinear_logreg_tucker, x_train_cell, x_test_cell, y_train, y_test, ncomps);
+auc_tucker(i) = decompose_predict(@tucker_decompose, x_train, x_test, y_train, y_test, ncomps);
+auc_parafac(i) = decompose_predict(@parafac_decompose, x_train, x_test, y_train, y_test, ncomps);
+auc_tucker2(i) = decompose_predict(@tucker2_decompose, x_train, x_test, y_train, y_test, ncomps);
+auc_parafac2(i) = decompose_predict(@parafac2_decompose, x_train, x_test, y_train, y_test, ncomps);
+end
+%%
+close all
+
+semilogx(trainobs, auc_lda)
+hold on;
+semilogx(trainobs, auc_dgtda)
+semilogx(trainobs, auc_dater)
+semilogx(trainobs, auc_datereig)
+semilogx(trainobs, auc_cmda)
+legend('lda', 'dgtda', 'dater', 'datereig', 'cmda')
+
+figure()
+semilogx(trainobs, auc_ManPDA, '-x')
+hold on;
+semilogx(trainobs, auc_ManTDA, '-x')
+semilogx(trainobs, auc_ManPDA_normsratio, '-x')
+semilogx(trainobs, auc_ManTDA_normsratio, '-x')
+semilogx(trainobs, auc_BDCA, '-x')
+semilogx(trainobs, auc_BDCA_tucker, '-x')
+legend('ManPDA', 'ManTDA', 'ManPDA_normsratio', ...
+    'ManTDA_normsratio', 'BDCA', 'BDCA_tucker')
+
+
+figure()
+semilogx(trainobs, auc_tucker, '-x')
+hold on;
+semilogx(trainobs, auc_parafac, '-x')
+semilogx(trainobs, auc_tucker2, '-x')
+semilogx(trainobs, auc_parafac2, '-x')
+legend('tucker', 'parafac', 'tucker2', 'parafac2')
+
+%legend('lda', 'dgtda', 'dater', 'datereig', 'cmda', 'ManPDA', 'ManTDA', 'ManPDA_normsratio', ...
+%    'ManTDA_normsratio', 'BDCA', 'BDCA_tucker', 'tucker', 'parafac', 'tucker2', 'parafac2')
 
 
