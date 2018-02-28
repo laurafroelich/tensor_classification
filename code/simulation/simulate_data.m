@@ -38,8 +38,9 @@ cores = cores(:,:,shuffled_order);
 x = tmult(...
     tmult(cores, U1, 1),...
     U2, 2);
-x = x + randn(1)*sqrt(0.1);
-
+x = x + randn(size(x))*sqrt(0.1) + ... % sqrt(0.1) is good. With 1, CMDA fails to estimate with NaN/Inf values.
+    ... % with sqrt(0.8), sqrt(0.4) and sqrt(0.5), DATEReig fails.
+    randn(1)*sqrt(0.1);
 
 end
 
