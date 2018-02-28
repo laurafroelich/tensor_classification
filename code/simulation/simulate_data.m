@@ -38,7 +38,7 @@ cores = cores(:,:,shuffled_order);
 x = tmult(...
     tmult(cores, U1, 1),...
     U2, 2);
-
+x = x + randn(1)*sqrt(0.1);
 
 
 end
@@ -60,7 +60,7 @@ function cores = simulate_core_matrices(nobs, ncomps, parafac_structure)
 % correlation matrix of the simulated cores
 Z = posdef(ncomps);
 R = chol(Z);
-df = 100;
+df = 1;
 cores = NaN([ncomps, ncomps, nobs]);
 for iobs = 1:nobs
     if ~parafac_structure

@@ -2,17 +2,17 @@ clear
 addpath(genpath('code/'))
 addpath('../matlab_additions/immoptibox/')
 
-n_rows = 10;
-n_cols = 20;
+n_rows = 20;
+n_cols = 40;
 
-trainobs = [50, 100, 200, 400];
+trainobs = [10, 20, 40, 80];
 
 for i = 1:length(trainobs)
-ncomps = 3;
+ncomps = 4;
 
 n_train_obs = trainobs(i);
 n_test_obs = 100;
-n_true_comps = 5;
+n_true_comps = 10;
 
 [x, y] = simulate_data(n_train_obs+n_test_obs, n_rows, n_cols, n_true_comps);
 c = cvpartition(y, 'HoldOut', n_test_obs/(n_train_obs+n_test_obs));
@@ -41,38 +41,41 @@ auc_parafac(i) = decompose_predict(@parafac_decompose, x_train, x_test, y_train,
 auc_tucker2(i) = decompose_predict(@tucker2_decompose, x_train, x_test, y_train, y_test, ncomps);
 auc_parafac2(i) = decompose_predict(@parafac2_decompose, x_train, x_test, y_train, y_test, ncomps);
 end
-%%
+%% linear x axis plots
 close all
 
-semilogx(trainobs, auc_lda)
+plot(trainobs, auc_lda)
 hold on;
-semilogx(trainobs, auc_dgtda)
-semilogx(trainobs, auc_dater)
-semilogx(trainobs, auc_datereig)
-semilogx(trainobs, auc_cmda)
+plot(trainobs, auc_dgtda)
+plot(trainobs, auc_dater)
+plot(trainobs, auc_datereig)
+plot(trainobs, auc_cmda)
 legend('lda', 'dgtda', 'dater', 'datereig', 'cmda')
+ylim([0, 1])
 
 figure()
-semilogx(trainobs, auc_ManPDA, '-x')
+plot(trainobs, auc_ManPDA, '-x')
 hold on;
-semilogx(trainobs, auc_ManTDA, '-x')
-semilogx(trainobs, auc_ManPDA_normsratio, '-x')
-semilogx(trainobs, auc_ManTDA_normsratio, '-x')
-semilogx(trainobs, auc_BDCA, '-x')
-semilogx(trainobs, auc_BDCA_tucker, '-x')
+plot(trainobs, auc_ManTDA, '-x')
+plot(trainobs, auc_ManPDA_normsratio, '-x')
+plot(trainobs, auc_ManTDA_normsratio, '-x')
+plot(trainobs, auc_BDCA, '-x')
+plot(trainobs, auc_BDCA_tucker, '-x')
 legend('ManPDA', 'ManTDA', 'ManPDA_normsratio', ...
     'ManTDA_normsratio', 'BDCA', 'BDCA_tucker')
+ylim([0, 1])
 
 
 figure()
-semilogx(trainobs, auc_tucker, '-x')
+plot(trainobs, auc_tucker, '-x')
 hold on;
-semilogx(trainobs, auc_parafac, '-x')
-semilogx(trainobs, auc_tucker2, '-x')
-semilogx(trainobs, auc_parafac2, '-x')
+plot(trainobs, auc_parafac, '-x')
+plot(trainobs, auc_tucker2, '-x')
+plot(trainobs, auc_parafac2, '-x')
 legend('tucker', 'parafac', 'tucker2', 'parafac2')
-
+ylim([0, 1])
 %legend('lda', 'dgtda', 'dater', 'datereig', 'cmda', 'ManPDA', 'ManTDA', 'ManPDA_normsratio', ...
 %    'ManTDA_normsratio', 'BDCA', 'BDCA_tucker', 'tucker', 'parafac', 'tucker2', 'parafac2')
+
 
 
