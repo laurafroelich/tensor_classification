@@ -2,24 +2,29 @@ clear
 addpath(genpath('code/'))
 addpath('../matlab_additions/immoptibox/')
 
-n_rows = 20;
-n_cols = 40;
+n_rows = 15;
+n_cols = 30;
 
-trainobs = [20, 40, 80];
+trainobs = [10, 20, 40];
 
 for i = 1:length(trainobs)
-ncomps = 2;
+ncomps = 4;
 
 n_train_obs = trainobs(i);
-n_test_obs = 200;
-n_true_comps = 5;
+n_test_obs = 100;
+n_true_comps = 10;
 
-%x_train, y_train = 
-[x_train, y_train] = simulate_data(n_train_obs, n_rows, n_cols, n_true_comps);
+[x, y] = simulate_data(n_train_obs+n_test_obs, n_rows, n_cols, n_true_comps);
+
+c = cvpartition(y, 'HoldOut', n_test_obs/(n_train_obs+n_test_obs));
+x_train = x(:,:,c.training);
+y_train = y(c.training);
+x_test = x(:,:,c.test);
+y_test= y(c.test);
+ 
 x_train_cell = mat_to_cell(x_train);
-
-[x_test, y_test] = simulate_data(n_test_obs, n_rows, n_cols, n_true_comps);
 x_test_cell = mat_to_cell(x_test);
+ 
 
 auc_lda(i) = get_vectorised_lda_auc(x_train, x_test, y_train, y_test);
 auc_dgtda(i) = heuristic_project_predict(@DGTDA, x_train_cell, x_test_cell, y_train, y_test, ncomps);
