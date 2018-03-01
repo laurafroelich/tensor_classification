@@ -2,17 +2,17 @@ clear
 addpath(genpath('code/'))
 addpath('../matlab_additions/immoptibox/')
 
-n_rows = 15;
+n_rows = 10;
 n_cols = 30;
 
-trainobs = [10, 20, 40];
+trainobs = [20, 30, 40];%, 75, 100];%, 150, 200, 250, 300, 350, 400, 500, 600];
 
 for i = 1:length(trainobs)
-ncomps = 4;
+ncomps = 3;
 
 n_train_obs = trainobs(i);
-n_test_obs = 100;
-n_true_comps = 10;
+n_test_obs = 500;
+n_true_comps = 8;
 
 [x, y] = simulate_data(n_train_obs+n_test_obs, n_rows, n_cols, n_true_comps);
 
@@ -62,8 +62,8 @@ plot(trainobs, auc_ManPDA_normsratio, '-x')
 plot(trainobs, auc_ManTDA_normsratio, '-x')
 plot(trainobs, auc_BDCA, '-x')
 plot(trainobs, auc_BDCA_tucker, '-x')
-legend('ManPDA', 'ManTDA', 'ManPDA_normsratio', ...
-    'ManTDA_normsratio', 'BDCA', 'BDCA_tucker')
+legend('ManPDA', 'ManTDA', 'ManPDA\_normsratio', ...
+    'ManTDA\_normsratio', 'BDCA', 'BDCA\_tucker')
 ylim([0, 1])
 
 
@@ -78,5 +78,26 @@ ylim([0, 1])
 %legend('lda', 'dgtda', 'dater', 'datereig', 'cmda', 'ManPDA', 'ManTDA', 'ManPDA_normsratio', ...
 %    'ManTDA_normsratio', 'BDCA', 'BDCA_tucker', 'tucker', 'parafac', 'tucker2', 'parafac2')
 
+%% linear x axis plots up to 400 training observations
+
+
+figure()
+plot(trainobs, auc_lda)
+hold on;
+plot(trainobs, auc_dgtda)
+plot(trainobs, auc_dater)
+plot(trainobs, auc_datereig)
+plot(trainobs, auc_cmda)
+
+plot(trainobs, auc_ManTDA_normsratio, 'k-x', 'LineWidth', 2)
+plot(trainobs, auc_tucker, '-x')
+plot(trainobs, auc_parafac, '-x')
+plot(trainobs, auc_tucker2, '-x')
+plot(trainobs, auc_parafac2, '-x')
+legend('tucker', 'parafac', 'tucker2', 'parafac2')
+ylim([0, 1])
+legend('lda', 'dgtda', 'dater', 'datereig', 'cmda',...
+    'ManTDA\_normsratio', 'tucker', 'parafac', 'tucker2', 'parafac2', ...
+    'Location', 'SouthEast')
 
 
