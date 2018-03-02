@@ -5,7 +5,7 @@ addpath('../matlab_additions/immoptibox/')
 n_rows = 20;
 n_cols = 40;
 
-trainobs = [20, 30, 40];%, 75, 100];%, 150, 200, 250, 300, 350, 400, 500, 600];
+trainobs = [20, 40, 60, 80, 100, 150, 200, 250, 300, 400, 500];%, 75, 100];%, 150, 200, 250, 300, 350, 400, 500, 600];
 
 for i = 1:length(trainobs)
 ncomps = 3;
