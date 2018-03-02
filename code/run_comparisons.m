@@ -2,8 +2,8 @@ clear
 addpath(genpath('code/'))
 addpath('../matlab_additions/immoptibox/')
 
-n_rows = 10;
-n_cols = 30;
+n_rows = 20;
+n_cols = 40;
 
 trainobs = [20, 30, 40];%, 75, 100];%, 150, 200, 250, 300, 350, 400, 500, 600];
 
