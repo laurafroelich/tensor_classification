@@ -17,24 +17,32 @@ else
     parafac_structure = varargin{1};
 end
 
+% the patterns should be the same for both classes
 U1 = orth(randn([nrows, ncomps])); % simulate orthogonal matrix for mode 1
 U2 = orth(randn([ncols, ncomps])); % simulate orthogonal matrix for mode 2
 
 class1size = floor(nobs/2);
 class2size = nobs - class1size;
 
+% only the cores are assumed to differ systematically between the classes
 cores1 = simulate_core_matrices(class1size, ncomps, parafac_structure);
 cores2 = simulate_core_matrices(class2size, ncomps, parafac_structure);
 
+% concatenate the cores for the two classes
 cores = cat(3, cores1, cores2);
 
+% generate the class labels for each observation
 y1 = zeros(class1size, 1);
 y2 = ones(class2size, 1);
 y = cat(1, y1, y2)+1;
 
+% shuffle the labels and the observations identically
 shuffled_order = randperm(nobs);
 y = y(shuffled_order);
 cores = cores(:,:,shuffled_order);
+
+% generate the simulated observations by multiplying the cores and the
+% factors for each mode, followed by noise addition.
 x = tmult(...
     tmult(cores, U1, 1),...
     U2, 2);
@@ -47,8 +55,16 @@ end
 
 
 function Z = posdef(n)
+% Z = posdef(n)
+% Generate a symmetric positive definite matrix of dimensions n by n.
 % https://stat.ethz.ch/pipermail/r-help/2008-February/153708
+
+% draw a vector of dimensions n by one from the standard uniform
+% distribution on the interval 0 to 1.
 eigen_vals = rand([n, 1]);
+
+% draw n*n standard normally distributed numbers arranged in an n by n
+% matrix.
 Z = randn([n, n]);
 [Q, R] = qr(Z);
 d = diag(R);
@@ -58,15 +74,24 @@ Z = Omat' * diag(eigen_vals) * Omat;
 end
 
 function cores = simulate_core_matrices(nobs, ncomps, parafac_structure)
-% correlation matrix of the simulated cores
+% correlation matrix of the simulated cores, must be positive definite and
+% symmetric to be a correlation matrix.
 Z = posdef(ncomps);
+
+% calculate R for speed-up when calling wishrnd multiple times.
 R = chol(Z);
+
+% lower numbers for the degrees of freedom imply higher variance for the
+% Wishart distribution.
 df = 1;
+
+% draw nobs matrices from the Wishart distribution with correlation Z.
 cores = NaN([ncomps, ncomps, nobs]);
 for iobs = 1:nobs
     if ~parafac_structure
         cores(:, :, iobs) = wishrnd(Z, df, R);
-    else
+    else % when the PARAFAC structure is simulated, the core matrix is 
+        % diagonal.
         cores(:, :, iobs) = diag(diag(wishrnd(Z, df, R)));
     end
 end
