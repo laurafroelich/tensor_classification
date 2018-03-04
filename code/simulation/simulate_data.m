@@ -25,8 +25,8 @@ class1size = floor(nobs/2);
 class2size = nobs - class1size;
 
 % only the cores are assumed to differ systematically between the classes
-cores1 = simulate_core_matrices(class1size, ncomps, parafac_structure);
-cores2 = simulate_core_matrices(class2size, ncomps, parafac_structure);
+cores1 = repmat(randn([ncomps, ncomps])*sqrt(0.01), [1, 1, class1size]); %simulate_core_matrices(class1size, ncomps, parafac_structure);
+cores2 = repmat(randn([ncomps, ncomps])*sqrt(0.01), [1, 1, class2size]); %simulate_core_matrices(class2size, ncomps, parafac_structure);
 
 % concatenate the cores for the two classes
 cores = cat(3, cores1, cores2);
@@ -39,16 +39,16 @@ y = cat(1, y1, y2)+1;
 % shuffle the labels and the observations identically
 shuffled_order = randperm(nobs);
 y = y(shuffled_order);
-cores = cores(:,:,shuffled_order);
+cores = cores(:,:,shuffled_order); %+ randn(size(cores))*sqrt(0.1);
 
 % generate the simulated observations by multiplying the cores and the
 % factors for each mode, followed by noise addition.
 x = tmult(...
     tmult(cores, U1, 1),...
     U2, 2);
-x = x + randn(size(x))*sqrt(0) + ... % sqrt(0.1) is good. With 1, CMDA fails to estimate with NaN/Inf values.
-    ... % with sqrt(0.8), sqrt(0.4) and sqrt(0.5), DATEReig fails.
-    randn(1)*sqrt(0.1);
+x = x + randn(size(x))*sqrt(0.3) + ... % sqrt(0.1) is good. With 1, CMDA fails to estimate with NaN/Inf values.
+    ... % with sqrt(0.8), sqrt(0.4) and sqrt(0.5), DATEReig fails. (when drawing cores form Wishart).
+    randn(1)*sqrt(0);
 
 end
 

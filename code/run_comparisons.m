@@ -5,10 +5,10 @@ addpath('../matlab_additions/immoptibox/')
 n_rows = 20;
 n_cols = 40;
 
-trainobs = [20, 40, 60, 80, 100, 150, 200, 250, 300, 400, 500];%, 75, 100];%, 150, 200, 250, 300, 350, 400, 500, 600];
+trainobs = [40, 80, 120];% [200, 250, 300];%, 100, 150, 200, 250, 300, 400, 500];%, 75, 100];%, 150, 200, 250, 300, 350, 400, 500, 600];
 
 for i = 1:length(trainobs)
-ncomps = 3;
+ncomps = 2;
 
 n_train_obs = trainobs(i);
 n_test_obs = 500;
@@ -40,7 +40,7 @@ auc_BDCA_tucker(i) = direct_predict(@bilinear_logreg_tucker, x_train_cell, x_tes
 auc_tucker(i) = decompose_predict(@tucker_decompose, x_train, x_test, y_train, y_test, ncomps);
 auc_parafac(i) = decompose_predict(@parafac_decompose, x_train, x_test, y_train, y_test, ncomps);
 auc_tucker2(i) = decompose_predict(@tucker2_decompose, x_train, x_test, y_train, y_test, ncomps);
-auc_parafac2(i) = decompose_predict(@parafac2_decompose, x_train, x_test, y_train, y_test, ncomps);
+%auc_parafac2(i) = decompose_predict(@parafac2_decompose, x_train, x_test, y_train, y_test, ncomps);
 end
 %% linear x axis plots
 close all
@@ -72,8 +72,8 @@ plot(trainobs, auc_tucker, '-x')
 hold on;
 plot(trainobs, auc_parafac, '-x')
 plot(trainobs, auc_tucker2, '-x')
-plot(trainobs, auc_parafac2, '-x')
-legend('tucker', 'parafac', 'tucker2', 'parafac2')
+%plot(trainobs, auc_parafac2, '-x')
+legend('tucker', 'parafac', 'tucker2')%, 'parafac2')
 ylim([0, 1])
 %legend('lda', 'dgtda', 'dater', 'datereig', 'cmda', 'ManPDA', 'ManTDA', 'ManPDA_normsratio', ...
 %    'ManTDA_normsratio', 'BDCA', 'BDCA_tucker', 'tucker', 'parafac', 'tucker2', 'parafac2')
@@ -93,11 +93,11 @@ plot(trainobs, auc_ManTDA_normsratio, 'k-x', 'LineWidth', 2)
 plot(trainobs, auc_tucker, '-x')
 plot(trainobs, auc_parafac, '-x')
 plot(trainobs, auc_tucker2, '-x')
-plot(trainobs, auc_parafac2, '-x')
+%plot(trainobs, auc_parafac2, '-x')
 legend('tucker', 'parafac', 'tucker2', 'parafac2')
 ylim([0, 1])
 legend('lda', 'dgtda', 'dater', 'datereig', 'cmda',...
-    'ManTDA\_normsratio', 'tucker', 'parafac', 'tucker2', 'parafac2', ...
+    'ManTDA\_normsratio', 'tucker', 'parafac', 'tucker2',... % 'parafac2', ...
     'Location', 'SouthEast')
 
 
