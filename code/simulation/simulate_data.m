@@ -46,9 +46,9 @@ cores = cores(:,:,shuffled_order); %+ randn(size(cores))*sqrt(0.1);
 x = tmult(...
     tmult(cores, U1, 1),...
     U2, 2);
-x = x + randn(size(x))*sqrt(0.3) + ... % sqrt(0.1) is good. With 1, CMDA fails to estimate with NaN/Inf values.
+x = x + randn(size(x))*sqrt(1) + ... % sqrt(0.1) is good. With 1, CMDA fails to estimate with NaN/Inf values.
     ... % with sqrt(0.8), sqrt(0.4) and sqrt(0.5), DATEReig fails. (when drawing cores form Wishart).
-    randn(1)*sqrt(0);
+    reshape(repmat(randn(1, size(x, 3))*sqrt(0.5), [nrows*ncols, 1]), [nrows, ncols, size(x,3)]); %randn(1)*sqrt(0);
 
 end
 
