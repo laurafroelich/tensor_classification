@@ -100,7 +100,7 @@ plot(trainobs, auc_tucker2, '-x')
 %plot(trainobs, auc_parafac2, '-x')
 legend('LDA', 'DGTDA', 'DATER', 'DATEReig', 'CMDA',...
     'ManTDA\_sr', 'Tucker', 'PARAFAC', 'Tucker2',... % 'parafac2', ...
-    'Location', 'NorthWest')
+    'Location', 'SouthWest')
 title('AUC vs number of training samples', 'FontSize', titlefontsize)
 set(gca, 'FontSize', gcafontsize)
 xlabel('Number of training samples')
@@ -108,5 +108,5 @@ ylabel('Area Under ROC Curve')
 set(gcf,'color','w');
     
 if savefig
-    export_fig(figh, 'figures/ManTDA_sr_vs_nonMan_structured_noise_hihg_aucs.pdf', '-pdf')
+    export_fig(figh, 'figures/ManTDA_sr_vs_nonMan_structured_noise_high_aucs.pdf', '-pdf')
 end
