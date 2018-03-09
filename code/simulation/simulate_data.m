@@ -45,8 +45,8 @@ y = y(shuffled_order);
 cores = cores(:,:,shuffled_order); %+ randn(size(cores))*sqrt(0.1);
 sigma  = 4; % 3 in latest sent plot
 Nnoisecomp = ncomps;
-Unoise1 = orth(randn([nrows, Nnoisecomp])*sqrt(0.1)); % simulate orthogonal matrix for mode 1
-Unoise2 = orth(randn([ncols, Nnoisecomp])*sqrt(0.1)); % simulate orthogonal matrix for mode 2
+Unoise1 = orth(randn([nrows, Nnoisecomp])*sqrt(0.01)); % simulate orthogonal matrix for mode 1
+Unoise2 = orth(randn([ncols, Nnoisecomp])*sqrt(0.01)); % simulate orthogonal matrix for mode 2
 
 % generate the simulated observations by multiplying the cores and the
 % factors for each mode, followed by noise addition.
