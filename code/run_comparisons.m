@@ -8,7 +8,7 @@ n_cols = 80;
 
 savefig = false;
 
-trainobs = 100:200:800; %[50:50:250]; %%[50, 100, 200, 400, 800, 1600];% [200, 250, 300];%, 100, 150, 200, 250, 300, 400, 500];%, 75, 100];%, 150, 200, 250, 300, 350, 400, 500, 600];
+trainobs = 100:200:2000; %[50:50:250]; %%[50, 100, 200, 400, 800, 1600];% [200, 250, 300];%, 100, 150, 200, 250, 300, 400, 500];%, 75, 100];%, 150, 200, 250, 300, 350, 400, 500, 600];
 
 for i = 1:length(trainobs)
     ncomps = 3;
@@ -109,5 +109,5 @@ ylabel('Area Under ROC Curve')
 set(gcf,'color','w');
     
 if savefig
-    export_fig(figh, 'figures/ManTDA_sr_vs_nonMan_structured_noise3.pdf', '-pdf')
+    export_fig(figh, 'figures/ManTDA_sr_vs_nonMan_structured_noise_hihger_aucs.pdf', '-pdf')
 end
