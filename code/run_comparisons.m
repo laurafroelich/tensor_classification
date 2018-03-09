@@ -4,19 +4,20 @@ addpath('../matlab_additions/immoptibox/')
 run('colsandlinestyles.m')
 
 n_rows = 10;
-n_cols = 40;
+n_cols = 80;
 
 savefig = false;
 
-trainobs = 20:20:100; %[50:50:250]; %%[50, 100, 200, 400, 800, 1600];% [200, 250, 300];%, 100, 150, 200, 250, 300, 400, 500];%, 75, 100];%, 150, 200, 250, 300, 350, 400, 500, 600];
+trainobs = 100:200:2000; %[50:50:250]; %%[50, 100, 200, 400, 800, 1600];% [200, 250, 300];%, 100, 150, 200, 250, 300, 400, 500];%, 75, 100];%, 150, 200, 250, 300, 350, 400, 500, 600];
 
 for i = 1:length(trainobs)
-    ncomps = 4;
+    ncomps = 3;
     
     n_train_obs = trainobs(i);
     n_test_obs = 500;
-    n_true_comps = 4;
+    n_true_comps = 3;
     
+    rng(0)
     [x, y] = simulate_data(n_train_obs+n_test_obs, n_rows, n_cols, n_true_comps);
     
     c = cvpartition(y, 'HoldOut', n_test_obs/(n_train_obs+n_test_obs));
@@ -108,5 +109,5 @@ ylabel('Area Under ROC Curve')
 set(gcf,'color','w');
     
 if savefig
-    export_fig(figh, 'figures/ManTDA_sr_vs_nonMan.pdf', '-pdf')
+    export_fig(figh, 'figures/ManTDA_sr_vs_nonMan_structured_noise.pdf', '-pdf')
 end
