@@ -27,8 +27,8 @@ class2size = nobs - class1size;
 % only the cores are assumed to differ systematically between the classes
 %cores1 = repmat(randn([ncomps, ncomps])*sqrt(0.01), [1, 1, class1size]); %simulate_core_matrices(class1size, ncomps, parafac_structure);
 %cores2 = repmat(randn([ncomps, ncomps])*sqrt(0.01), [1, 1, class2size]); %simulate_core_matrices(class2size, ncomps, parafac_structure);
-cores1 = repmat(diag(diag(randn([ncomps, ncomps])))*sqrt(1), [1, 1, class1size]); %simulate_core_matrices(class1size, ncomps, parafac_structure);
-cores2 = repmat(diag(diag(randn([ncomps, ncomps])))*sqrt(1), [1, 1, class2size]); %simulate_core_matrices(class2size, ncomps, parafac_structure);
+cores1 = repmat(diag(diag(randn([ncomps, ncomps])))*sqrt(2), [1, 1, class1size]); %simulate_core_matrices(class1size, ncomps, parafac_structure);
+cores2 = repmat(diag(diag(randn([ncomps, ncomps])))*sqrt(2), [1, 1, class2size]); %simulate_core_matrices(class2size, ncomps, parafac_structure);
 
 % concatenate the cores for the two classes
 cores = cat(3, cores1, cores2);
@@ -43,7 +43,7 @@ y = cat(1, y1, y2)+1;
 shuffled_order = randperm(nobs);
 y = y(shuffled_order);
 cores = cores(:,:,shuffled_order); %+ randn(size(cores))*sqrt(0.1);
-sigma  = 4; % 3 in latest sent plot
+sigma  = 5;
 Nnoisecomp = ncomps;
 Unoise1 = orth(randn([nrows, Nnoisecomp])*sqrt(0.01)); % simulate orthogonal matrix for mode 1
 Unoise2 = orth(randn([ncols, Nnoisecomp])*sqrt(0.01)); % simulate orthogonal matrix for mode 2
@@ -53,7 +53,7 @@ Unoise2 = orth(randn([ncols, Nnoisecomp])*sqrt(0.01)); % simulate orthogonal mat
 x = tmult(...
     tmult(cores, U1, 1),...
     U2, 2);
-x = x + sigma*tmult(tmult(randn(Nnoisecomp,Nnoisecomp,nobs), Unoise1, 1), Unoise2, 2) + randn(size(x))*sqrt(0.01);% + ... % sqrt(0.1) is good. With 1, CMDA fails to estimate with NaN/Inf values.
+x = x + sigma*tmult(tmult(randn(Nnoisecomp,Nnoisecomp,nobs), Unoise1, 1), Unoise2, 2);% + randn(size(x))*sqrt(0.01);% + ... % sqrt(0.1) is good. With 1, CMDA fails to estimate with NaN/Inf values.
     %... % with sqrt(0.8), sqrt(0.4) and sqrt(0.5), DATEReig fails. (when drawing cores form Wishart).
     %reshape(repmat(randn(1, size(x, 3))*sqrt(10), [nrows*ncols, 1]), [nrows, ncols, size(x,3)]); %randn(1)*sqrt(0);
 

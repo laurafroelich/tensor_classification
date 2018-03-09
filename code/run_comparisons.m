@@ -109,5 +109,5 @@ ylabel('Area Under ROC Curve')
 set(gcf,'color','w');
     
 if savefig
-    export_fig(figh, 'figures/ManTDA_sr_vs_nonMan_structured_noise2.pdf', '-pdf')
+    export_fig(figh, 'figures/ManTDA_sr_vs_nonMan_structured_noise3.pdf', '-pdf')
 end
