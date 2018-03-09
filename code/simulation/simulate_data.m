@@ -27,12 +27,12 @@ class2size = nobs - class1size;
 % only the cores are assumed to differ systematically between the classes
 %cores1 = repmat(randn([ncomps, ncomps])*sqrt(0.01), [1, 1, class1size]); %simulate_core_matrices(class1size, ncomps, parafac_structure);
 %cores2 = repmat(randn([ncomps, ncomps])*sqrt(0.01), [1, 1, class2size]); %simulate_core_matrices(class2size, ncomps, parafac_structure);
-cores1 = repmat(diag(diag(randn([ncomps, ncomps])))*sqrt(3), [1, 1, class1size]); %simulate_core_matrices(class1size, ncomps, parafac_structure);
-cores2 = repmat(diag(diag(randn([ncomps, ncomps])))*sqrt(3), [1, 1, class2size]); %simulate_core_matrices(class2size, ncomps, parafac_structure);
+cores1 = repmat(diag(diag(randn([ncomps, ncomps])))*sqrt(5), [1, 1, class1size]); %simulate_core_matrices(class1size, ncomps, parafac_structure);
+cores2 = repmat(diag(diag(randn([ncomps, ncomps])))*sqrt(5), [1, 1, class2size]); %simulate_core_matrices(class2size, ncomps, parafac_structure);
 
 % concatenate the cores for the two classes
 cores = cat(3, cores1, cores2);
-cores = cores + randn(size(cores))*sqrt(3); %sqrt(2) in latest sent plot
+cores = cores + randn(size(cores))*sqrt(1); %sqrt(2) in latest sent plot
 
 % generate the class labels for each observation
 y1 = zeros(class1size, 1);

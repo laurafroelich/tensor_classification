@@ -82,8 +82,7 @@ ylim([0, 1])
 %legend('lda', 'dgtda', 'dater', 'datereig', 'cmda', 'ManPDA', 'ManTDA', 'ManPDA_normsratio', ...
 %    'ManTDA_normsratio', 'BDCA', 'BDCA_tucker', 'tucker', 'parafac', 'tucker2', 'parafac2')
 
-%% linear x axis plots up to 400 training observations
-
+%% linear x axis plots 
 
 
 figh = figure('units', 'normalized', 'outerposition', [0 0 1 1]);
@@ -109,5 +108,5 @@ ylabel('Area Under ROC Curve')
 set(gcf,'color','w');
     
 if savefig
-    export_fig(figh, 'figures/ManTDA_sr_vs_nonMan_structured_noise_hihger_aucs.pdf', '-pdf')
+    export_fig(figh, 'figures/ManTDA_sr_vs_nonMan_structured_noise_hihg_aucs.pdf', '-pdf')
 end
