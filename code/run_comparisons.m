@@ -11,10 +11,10 @@ n_test_obs = 500;
 n_true_comps = 3;
 ncomps = 3;
 
-for iconfig = 3:3
+for iconfig = 1:1
     [sigma, corestd, coreNoiseStd, UNoiseStd] = get_config(configs{iconfig});
     
-    for i = 5:length(trainobs)
+    for i = 8:length(trainobs)
         for iit = 1:10
             n_train_obs = trainobs(i);
             
