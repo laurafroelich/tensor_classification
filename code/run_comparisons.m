@@ -1,3 +1,4 @@
+clear
 addpath(genpath('code/'))
 addpath('../matlab_additions/immoptibox/')
 run('colsandlinestyles.m')
@@ -11,15 +12,18 @@ n_test_obs = 500;
 n_true_comps = 3;
 ncomps = 3;
 
-for iconfig = 1:1
-    [sigma, corestd, coreNoiseStd, UNoiseStd] = get_config(configs{iconfig});
+core1 = randn([n_true_comps, n_true_comps]);
+core2 = randn([n_true_comps, n_true_comps]);
+
+for iconfig = 1:3
+    [sigma, corestd, coreNoiseStd] = get_config(configs{iconfig});
     
-    for i = 8:length(trainobs)
+    for i = 1:length(trainobs)
         for iit = 1:10
             n_train_obs = trainobs(i);
             
-            [x, y] = simulate_data(n_train_obs+n_test_obs, n_rows, n_cols, ...
-                n_true_comps, sigma, corestd, coreNoiseStd, UNoiseStd);
+            [x, y] = simulate_data(n_train_obs+n_test_obs, n_rows, n_cols, ncomps, ...
+            sigma, corestd, coreNoiseStd, core1, core2);
             
             c = cvpartition(y, 'HoldOut', n_test_obs/(n_train_obs+n_test_obs));
             x_train = x(:,:,c.training);
@@ -30,12 +34,13 @@ for iconfig = 1:1
             x_train_cell = mat_to_cell(x_train);
             x_test_cell = mat_to_cell(x_test);
             
-            
+            try
             auc_lda(iit, i, iconfig) = get_vectorised_lda_auc(x_train, x_test, y_train, y_test);
             auc_dgtda(iit, i, iconfig) = heuristic_project_predict(@DGTDA, x_train_cell, x_test_cell, y_train, y_test, ncomps);
             auc_dater(iit, i, iconfig) = heuristic_project_predict(@DATER, x_train_cell, x_test_cell, y_train, y_test, ncomps);
             auc_datereig(iit, i, iconfig) = heuristic_project_predict(@DATEReig, x_train_cell, x_test_cell, y_train, y_test, ncomps);
             auc_cmda(iit, i, iconfig) = heuristic_project_predict(@CMDA, x_train_cell, x_test_cell, y_train, y_test, ncomps);
+            auc_hoda(iit, i, iconfig) = heuristic_project_predict(@HODA, x_train_cell, x_test_cell, y_train, y_test, ncomps);
             auc_ManPDA(iit, i, iconfig) = manifold_project_predict(@ManPDA, x_train_cell, x_test_cell, y_train, y_test, ncomps);
             auc_ManTDA(iit, i, iconfig) = manifold_project_predict(@ManTDA, x_train_cell, x_test_cell, y_train, y_test, ncomps);
             auc_ManPDA_normsratio(iit, i, iconfig) = manifold_project_predict(@ManPDA_normsratio, x_train_cell, x_test_cell, y_train, y_test, ncomps);
@@ -46,6 +51,10 @@ for iconfig = 1:1
             auc_parafac(iit, i, iconfig) = decompose_predict(@parafac_decompose, x_train, x_test, y_train, y_test, ncomps);
             auc_tucker2(iit, i, iconfig) = decompose_predict(@tucker2_decompose, x_train, x_test, y_train, y_test, ncomps);
             %auc_parafac2(i) = decompose_predict(@parafac2_decompose, x_train, x_test, y_train, y_test, ncomps);
+            catch
+                display('oops!')
+                display(['i: ', num2str(i), 'iit: ', num2str(iit),'iconfig: ', num2str(iconfig)])
+            end
             save(['results/aucs_iit_', num2str(iit), '.mat'])
         end
     end

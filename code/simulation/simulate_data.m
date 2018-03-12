@@ -1,5 +1,5 @@
 function [x, y] = simulate_data(nobs, nrows, ncols, ncomps, sigma, corestd, ...
-coreNoiseStd, UNoiseStd, varargin)
+    coreNoiseStd, core1, core2, varargin)
 % [x, y] = simulate_data(nobs, nrows, ncols)
 %
 % Simulate data based on either a Tucker or a PARAFAC structure.
@@ -7,10 +7,7 @@ coreNoiseStd, UNoiseStd, varargin)
 % x_i =  U1 * core * U2',
 % where U1 is a matrix of size nrows by ncomps and U2 is a matrix of size
 % ncols by ncomps. U1 and U2 are simulated orthogonal matrices, and are
-% the same for all observations. The matrix core has size ncomps by ncomps
-% and is simulated independently for each observation, drawn from the
-% distribution for the observation's class. If the first element of
-% varargin is true, then the core matrix is diagonal.
+% the same for all observations.
 
 if isempty(varargin)
     parafac_structure = false;
@@ -26,14 +23,15 @@ class1size = floor(nobs/2);
 class2size = nobs - class1size;
 
 % only the cores are assumed to differ systematically between the classes
-%cores1 = repmat(randn([ncomps, ncomps])*sqrt(0.01), [1, 1, class1size]); %simulate_core_matrices(class1size, ncomps, parafac_structure);
-%cores2 = repmat(randn([ncomps, ncomps])*sqrt(0.01), [1, 1, class2size]); %simulate_core_matrices(class2size, ncomps, parafac_structure);
-cores1 = repmat(diag(diag(randn([ncomps, ncomps])))*sqrt(corestd), [1, 1, class1size]); %simulate_core_matrices(class1size, ncomps, parafac_structure);
-cores2 = repmat(diag(diag(randn([ncomps, ncomps])))*sqrt(corestd), [1, 1, class2size]); %simulate_core_matrices(class2size, ncomps, parafac_structure);
-
+if ~parafac_structure
+    cores1 = repmat(core1*corestd, [1, 1, class1size]); 
+    cores2 = repmat(core2*corestd, [1, 1, class2size]); 
+else
+    cores1 = repmat(diag(diag(core1*corestd)), [1, 1, class1size]); 
+    cores2 = repmat(diag(diag(core2*corestd)), [1, 1, class2size]); 
+end
 % concatenate the cores for the two classes
 cores = cat(3, cores1, cores2);
-cores = cores + randn(size(cores))*sqrt(1); 
 
 % generate the class labels for each observation
 y1 = zeros(class1size, 1);
@@ -45,18 +43,15 @@ shuffled_order = randperm(nobs);
 y = y(shuffled_order);
 cores = cores(:,:,shuffled_order)+ randn(size(cores))*coreNoiseStd;
 Nnoisecomp = ncomps;
-Unoise1 = orth(randn([nrows, Nnoisecomp])*UNoiseStd); % simulate orthogonal matrix for mode 1
-Unoise2 = orth(randn([ncols, Nnoisecomp])*UNoiseStd); % simulate orthogonal matrix for mode 2
+Unoise1 = orth(randn([nrows, Nnoisecomp])); % simulate orthogonal matrix for mode 1
+Unoise2 = orth(randn([ncols, Nnoisecomp])); % simulate orthogonal matrix for mode 2
 
 % generate the simulated observations by multiplying the cores and the
-% factors for each mode, followed by noise addition.
+% factors for each mode.
 x = tmult(...
     tmult(cores, U1, 1),...
     U2, 2);
-x = x + sigma*tmult(tmult(randn(Nnoisecomp,Nnoisecomp,nobs), Unoise1, 1), Unoise2, 2);% + randn(size(x))*sqrt(1);% + ... % sqrt(0.1) is good. With 1, CMDA fails to estimate with NaN/Inf values.
-    %... % with sqrt(0.8), sqrt(0.4) and sqrt(0.5), DATEReig fails. (when drawing cores form Wishart).
-    %reshape(repmat(randn(1, size(x, 3))*sqrt(10), [nrows*ncols, 1]), [nrows, ncols, size(x,3)]); %randn(1)*sqrt(0);
-
+x = x + sigma*tmult(tmult(randn(Nnoisecomp,Nnoisecomp,nobs), Unoise1, 1), Unoise2, 2);
 end
 
 
@@ -97,7 +92,7 @@ cores = NaN([ncomps, ncomps, nobs]);
 for iobs = 1:nobs
     if ~parafac_structure
         cores(:, :, iobs) = wishrnd(Z, df, R);
-    else % when the PARAFAC structure is simulated, the core matrix is 
+    else % when the PARAFAC structure is simulated, the core matrix is
         % diagonal.
         cores(:, :, iobs) = diag(diag(wishrnd(Z, df, R)));
     end

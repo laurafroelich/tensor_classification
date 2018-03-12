@@ -52,7 +52,7 @@ Bs = cell(nmodes, 1);
 for nmode = 1:nmodes
     diffmatricised = matricizing(classmeandiffs{1}, nmode);
     Bs{nmode} = nis(1)*(diffmatricised*diffmatricised');
-    for iclass=2:nclasses
+    for iclass=1:nclasses
         diffmatricised = matricizing(classmeandiffs{iclass}, nmode);
         Bs{nmode} = Bs{nmode} + nis(iclass)*(diffmatricised*diffmatricised');
     end
