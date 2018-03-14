@@ -14,12 +14,12 @@ ncomps = 3;
 
 core1 = randn([n_true_comps, n_true_comps]);
 core2 = randn([n_true_comps, n_true_comps]);
-
-for iconfig = 1:3
+%%
+for iconfig = 3
     [sigma, corestd, coreNoiseStd] = get_config(configs{iconfig});
     
-    for i = 1:length(trainobs)
-        for iit = 1:10
+    for i = 9%1:length(trainobs)
+        for iit = 5%1:25
             n_train_obs = trainobs(i);
             
             [x, y] = simulate_data(n_train_obs+n_test_obs, n_rows, n_cols, ncomps, ...
