@@ -14,12 +14,15 @@ ncomps = 3;
 
 core1 = randn([n_true_comps, n_true_comps]);
 core2 = randn([n_true_comps, n_true_comps]);
+%% if needing to resume simulation computations
+%load('results/aucs_iit_16.mat')
+
 %%
-for iconfig = 3
+for iconfig = 1:3
     [sigma, corestd, coreNoiseStd] = get_config(configs{iconfig});
     
-    for i = 9%1:length(trainobs)
-        for iit = 5%1:25
+    for i = 1:length(trainobs)
+        for iit = 1:25
             n_train_obs = trainobs(i);
             
             [x, y] = simulate_data(n_train_obs+n_test_obs, n_rows, n_cols, ncomps, ...
@@ -54,6 +57,7 @@ for iconfig = 3
             catch
                 display('oops!')
                 display(['i: ', num2str(i), 'iit: ', num2str(iit),'iconfig: ', num2str(iconfig)])
+                auc_tucker2(iit, i, iconfig) = NaN;
             end
             save(['results/aucs_iit_', num2str(iit), '.mat'])
         end
