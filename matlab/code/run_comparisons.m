@@ -1,6 +1,6 @@
 clear
 addpath(genpath('code/'))
-addpath('../matlab_additions/immoptibox/')
+addpath('../../matlab_additions/immoptibox/')
 run('colsandlinestyles.m')
 savefig = false;
 
