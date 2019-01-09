@@ -9,6 +9,13 @@ function test_parafac_lda_gradient(testCase)
         @parafacldaobj_matrixdata)
 end
 
+function test_tucker_lda_gradient(testCase)
+    analytical_vs_numerical_gradient(testCase, 'U1',...
+        @tensorsldaobj_matrixdata)
+    analytical_vs_numerical_gradient(testCase, 'U2',...
+        @tensorsldaobj_matrixdata)
+end
+
 function analytical_vs_numerical_gradient(testCase, matrix_name, ...
     objective_function)
     p = 5;
