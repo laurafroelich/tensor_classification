@@ -62,30 +62,6 @@ function matrices_in_struct = get_initial_matrices(p, q, k1, k2)
     matrices_in_struct.U2 = U2;
 end
 
-function [Xs, classes] = get_data(nsamples, xdims)
-
-    if nargin < 2
-        xdims = [5, 7];
-
-        if nargin < 1
-            nsamples = 500;
-        end
-    end
-
-    classes = round(rand(nsamples,1))+1;
-    Xs = cell(1, nsamples);
-
-    for isample = 1:nsamples
-        if classes(isample) == 1
-            Xs{isample} =  randn(xdims);
-        else
-
-            Xs{isample} =  randn(xdims) + 10;
-        end
-    end
-
-    
-end
 
 function estderiv = get_numerically_estimated_gradient(myfun, ...
     Ustruct, matrix_name)
