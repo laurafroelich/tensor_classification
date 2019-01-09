@@ -2,10 +2,6 @@ function tests = test_gradients
     tests = functiontests(localfunctions);
 end
 
-function test_FunctionOne(testCase)
-    verifyEqual(testCase, 4, 4)
-end
-
 function test_parafac_lda_gradient(testCase)
     analytical_vs_numerical_gradient(testCase, 'U1',...
         @parafacldaobj_matrixdata)
