@@ -1,15 +1,22 @@
-function tests = test_gradients
+function tests = test_gradients            
     tests = functiontests(localfunctions);
 end
 
 function test_parafac_lda_gradient(testCase)
+    import matlab.unittest.fixtures.PathFixture
+    testCase.applyFixture(PathFixture('../', 'IncludeSubfolders', true));
+        
     analytical_vs_numerical_gradient(testCase, 'U1',...
         @parafacldaobj_matrixdata)
     analytical_vs_numerical_gradient(testCase, 'U2',...
         @parafacldaobj_matrixdata)
 end
 
-function test_tucker_lda_gradient(testCase)
+function test_tucker_lda_gradient(testCase)    
+    import matlab.unittest.fixtures.PathFixture
+    testCase.applyFixture(PathFixture('../', 'IncludeSubfolders', true));
+    testCase.applyFixture(PathFixture('../../../../matlab_additions/02582nway_models/', 'IncludeSubfolders', true));
+
     analytical_vs_numerical_gradient(testCase, 'U1',...
         @tensorsldaobj_matrixdata)
     analytical_vs_numerical_gradient(testCase, 'U2',...
