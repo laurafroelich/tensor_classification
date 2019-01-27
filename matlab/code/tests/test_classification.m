@@ -71,7 +71,6 @@ function test_cmda_discrimination(testCase)
     import matlab.unittest.fixtures.PathFixture
     testCase.applyFixture(PathFixture('../', 'IncludeSubfolders', true));
     testCase.applyFixture(PathFixture('../../../../matlab_additions/02582nway_models/', 'IncludeSubfolders', true));
-    testCase.applyFixture(PathFixture('../../../../matlab_additions/manopt/', 'IncludeSubfolders', true));    
     
     parafac_structure = false;
     k = 2;
@@ -87,7 +86,6 @@ function test_dgtda_discrimination(testCase)
     import matlab.unittest.fixtures.PathFixture
     testCase.applyFixture(PathFixture('../', 'IncludeSubfolders', true));
     testCase.applyFixture(PathFixture('../../../../matlab_additions/02582nway_models/', 'IncludeSubfolders', true));
-    testCase.applyFixture(PathFixture('../../../../matlab_additions/manopt/', 'IncludeSubfolders', true));    
     
     parafac_structure = false;
     k = 2;
@@ -103,7 +101,6 @@ function test_dater_discrimination(testCase)
     import matlab.unittest.fixtures.PathFixture
     testCase.applyFixture(PathFixture('../', 'IncludeSubfolders', true));
     testCase.applyFixture(PathFixture('../../../../matlab_additions/02582nway_models/', 'IncludeSubfolders', true));
-    testCase.applyFixture(PathFixture('../../../../matlab_additions/manopt/', 'IncludeSubfolders', true));    
     
     parafac_structure = false;
     k = 2;
@@ -119,7 +116,6 @@ function test_datereig_discrimination(testCase)
     import matlab.unittest.fixtures.PathFixture
     testCase.applyFixture(PathFixture('../', 'IncludeSubfolders', true));
     testCase.applyFixture(PathFixture('../../../../matlab_additions/02582nway_models/', 'IncludeSubfolders', true));
-    testCase.applyFixture(PathFixture('../../../../matlab_additions/manopt/', 'IncludeSubfolders', true));    
     
     parafac_structure = false;
     k = 2;
@@ -135,7 +131,6 @@ function test_hoda_discrimination(testCase)
     import matlab.unittest.fixtures.PathFixture
     testCase.applyFixture(PathFixture('../', 'IncludeSubfolders', true));
     testCase.applyFixture(PathFixture('../../../../matlab_additions/02582nway_models/', 'IncludeSubfolders', true));
-    testCase.applyFixture(PathFixture('../../../../matlab_additions/manopt/', 'IncludeSubfolders', true));    
     
     parafac_structure = false;
     k = 2;
@@ -146,17 +141,70 @@ function test_hoda_discrimination(testCase)
     project_and_predict(Xs, Xs_test, ys, ys_test, k, Us, parafac_structure))
 end
 
+function test_bilinear_parafac_discrimination(testCase)
+    import matlab.unittest.fixtures.PathFixture
+    testCase.applyFixture(PathFixture('../', 'IncludeSubfolders', true));
+    testCase.applyFixture(PathFixture('../../../../matlab_additions/02582nway_models/', 'IncludeSubfolders', true));
+    testCase.applyFixture(PathFixture('../../../../matlab_additions/immoptibox/', 'IncludeSubfolders', true));
+    
+    k = 2;
+    nrandinits = 1;
+    [Xs, ys] = get_simple_data();
+    Xs_test = Xs;
+    ys_test = ys;
+    
+    
+    predicted_probabilities = bilinear_get_predictions(...
+        @bilinear_logreg, ...
+        Xs, Xs_test, ys, k, nrandinits);
+
+    [~, predictions] = max(predicted_probabilities, [], 2);
+    
+    accuracy = mean(predictions == ys_test);
+    
+    verifyEqual(testCase, accuracy, 1, 'AbsTol', 1e-1)
+end
+
+
+function test_bilinear_tucker_discrimination(testCase)
+    import matlab.unittest.fixtures.PathFixture
+    testCase.applyFixture(PathFixture('../', 'IncludeSubfolders', true));
+    testCase.applyFixture(PathFixture('../../../../matlab_additions/02582nway_models/', 'IncludeSubfolders', true));
+    testCase.applyFixture(PathFixture('../../../../matlab_additions/immoptibox/', 'IncludeSubfolders', true));
+    
+    k = 2;
+    nrandinits = 1;
+    [Xs, ys] = get_simple_data();
+    Xs_test = Xs;
+    ys_test = ys;
+    
+    
+    predicted_probabilities = bilinear_get_predictions(...
+        @bilinear_logreg_tucker, ...
+        Xs, Xs_test, ys, k, nrandinits);
+
+    [~, predictions] = max(predicted_probabilities, [], 2);
+    
+    accuracy = mean(predictions == ys_test);
+    
+    verifyEqual(testCase, accuracy, 1, 'AbsTol', 1e-1)
+end
+
+function [Xs, ys] = get_simple_data()
+    p = 5;
+    q = 7;
+    nsamples = 200;
+    [Xs, ys] = get_data(nsamples, [p, q]);
+end
+
 
 function project_matrices_verify_predictions(testCase, ...
     projection_learning_function, prediction_function, varargin)
 
-    p = 5;
-    q = 7;
-    k = 2;
-    nsamples = 200;
-    [Xs, ys] = get_data(nsamples, [p, q]);
+    [Xs, ys] = get_simple_data();
     Xs_test = Xs;
     ys_test = ys;
+    k = 2;
     
     Us = projection_learning_function(Xs, ys);
     
