@@ -139,7 +139,7 @@ outputs.outs = outs;
 Us{1} = U.U1;%U(1:N, 1:K1);
 Us{2} = U.U2;%U((N+1):end, (K1+1):end);
 
-if nargout >= 5
+if nargout >= 3
     Ys = cell(1, nsamples);
     for isample = 1:nsamples
         Yi = Xs{isample};
