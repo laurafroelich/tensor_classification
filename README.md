@@ -9,13 +9,20 @@ The projection methods implemented are: Discriminant Analysis Tensor Representat
 ## Direct classification methods
 
 # Dependencies
-ManOpt for optimisation over manifolds in Matlab
 
-Tensor manipulation code by Morten Mørup, available at http://www.imm.dtu.dk/~mm/downloads/CPandTucker.zip
+## Matlab
 
-immoptibox http://www2.imm.dtu.dk/projects/immoptibox/
+* ManOpt for optimisation over manifolds in Matlab
 
-Code assumes Matalb R2018b or higher
+* Tensor manipulation code by Morten Mørup, available at http://www.imm.dtu.dk/~mm/downloads/CPandTucker.zip
+
+* immoptibox http://www2.imm.dtu.dk/projects/immoptibox/
+
+* Code assumes Matalb R2018b or higher
+
+## Python
+
+See Requirements.txt (To be)
 
 # References
 [1] Shuicheng Yan, Dong Xu, Qiang Yang, Lei Zhang, Xiaoou Tang and Hong-Jiang Zhang, "Discriminant analysis with tensor representation," 2005 IEEE Computer Society Conference on Computer Vision and Pattern Recognition (CVPR'05), 2005, pp. 526-532 vol. 1.
