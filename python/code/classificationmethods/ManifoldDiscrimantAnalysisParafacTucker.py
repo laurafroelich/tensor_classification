@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 import numpy as np
 
 class ManifoldDiscrimantAnalysis(ABC):
-    def __init__(self, Xs, classes, lowerdims=None, Us=None, opts=None, usestoppingcrit=True, maxits=1000, store=None, optmeth='ManOpt'):
+    def __init__(self, Xs, classes, lowerdims=None, Us=None, opts=None, usestoppingcrit=True, maxits=1000, store={'Rw': 0, 'Rb': 0, 'QtRb': 0, 'QtRw':  0, 'QtBQ': 0, 'QtWQ': 0, 'QtWQinvQtBQ': 0}, optmeth='ManOpt'):
         self.Xs=Xs
         self.classes=classes
         self.lowerdims=lowerdims
@@ -29,14 +29,22 @@ class ManifoldDiscrimantAnalysis(ABC):
         self.F, self.store=self.ObjectMatrixData(x, store, classmeandiffs, observationdiffs, nis, K1, K2, Rw, Rb)
    
      
-class TuckerDiscriminantAanalysis(ManifoldDiscrimantAnalysis):
-    def QtCheck(store,Qt):
-        if Qt not in store:
+class TuckerDiscriminantAnalysis(ManifoldDiscrimantAnalysis):
+    def QtCheck(self,Qt):
+        if self.store[Qt]==0:
             store[Qt]=QtCalculator(Qt)
-        else 
-            store[Qt]=Qt
-    def QtCalculator(Qt):
-        
+    def QtCalculator(self,Qt,N=None,K1=None,K2=None,U1=None,U2=None):
+            if Qt in {'QtRw', 'QtRb'}:
+                Qt_mm=np.tensordot(np.tensordot(self.Qt[:-2],np.linalg.transpose(U1),axes=(1,0)),np.linalg.transpose(U2),axes=(2,0)) #Something might be horribly wrong here...
+                Qt_temp=np.reshape(np.rollaxis(Qt_mm,(1,0,2))(K2*K1,N)) #Not sure if this is the correct approach. Need MATLAB license to test original behavior
+                return(Qt_temp)
+            if Qt in {'QtWQ', 'QtBQ'}:
+                return(np.dot(self.store['QtRw'],self.store['QtRw']))
+            if Qt in {'QtWQinvQtBQ'}:
+                return(np.dot(self.store['QtWQ'],np.linalg.inv(self.store['QtBQ'])))          
+            else: 
+                print("Wrong Qt specified")
+            
     def ObjectMatrixData(U, classmeandiffs, observationdiffs, nis, K1, K2, Rw=None, Rb=None, store=None):
         if ('Rw' or 'Rb') not in store:
             obsExample=classmeandiffs[0]
@@ -64,38 +72,10 @@ class TuckerDiscriminantAanalysis(ManifoldDiscrimantAnalysis):
         N=datadims[0] #This is a point where the two-dimensionality is hardcoded..
         M=datadims[1]
         #We proceed to calculate all relevant matrices for the optimization step. 
-        if 'QtRw' not in store:
-            QtRw_mm=np.tensordot(np.tensordot(Rw,np.linalg.transpose(U1),axes=(1,0)),np.linalg.transpose(U2),axes=(2,0)) #Something might be horribly wrong here...
-            QtRw=np.reshape(np.rollaxis(QtRw_mm,(1,0,2))(K2*K1,nobs)) #Not sure if this is the correct approach. Need MATLAB license to test original behavior
-            store['QtRw']=QtRw
-        else:
-            QtRw=store['QtRw']
-        if 'QtRb' not in store:
-            #Same proceduere as above, with nobs replaced with nclasses, and Rw replaced with Rb
-            QtRb_mm=np.tensordot(np.tensordot(Rb,np.linalg.transpose(U1),axes=(1,0)),np.linalg.transpose(U2),axes=(2,0)) #Something might be horribly wrong here...
-            QtRb=np.reshape(np.rollaxis(QtRb_mm,(1,0,2))(K2*K1,nclasses)) #Not sure if this is the correct approach. Need MATLAB license to test original behavior
-            store['QtRw']=QtRw
-            store['QtRb']=QtRb
-        else:
-            QtRb=store['QtRb']
-        if 'QtWQ' not in store:
-            QtWQ=np.dot(QtRw,QtRw)
-            store['QtWQ']=QtWQ
-        else:
-            QtWQ=store['QtWQ']
-        if 'QtBQ' not in store:
-            QtBQ=np.dot(QtRb,QtRb)
-            store['QtBQ']=QtBQ
-        else:
-            QtBQ=store['QtBQ']
-            
-        if 'QtWQinvQtBQ' not in store:
-            QtWQinvQtBQ=np.dot(QtWQ,np.linalg.inv(QtBQ))
-            store['QtWQinvQtBQ']=QtWQinvQtBQ
-        else:
-            QtWQinvQtBQ=store['QtWQinvQtBQ'] 
+        for j in {'QtRw', 'QtRb', 'QtWQ', 'QtBQ', 'QtWQinvQtBQ'}:
+            TuckerDiscriminantAnalysis.QtCheck(j)
         
-        F=np.linalg.trace(QtWQinvQtBQ)
+        F=np.linalg.trace(store['QtWQinvQtBQ'])
         return(F, G, Rw, Rb, store)
         
         
