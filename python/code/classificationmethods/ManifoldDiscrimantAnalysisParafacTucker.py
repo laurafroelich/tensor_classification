@@ -30,6 +30,13 @@ class ManifoldDiscrimantAnalysis(ABC):
    
      
 class TuckerDiscriminantAanalysis(ManifoldDiscrimantAnalysis):
+    def QtCheck(store,Qt):
+        if Qt not in store:
+            store[Qt]=QtCalculator(Qt)
+        else 
+            store[Qt]=Qt
+    def QtCalculator(Qt):
+        
     def ObjectMatrixData(U, classmeandiffs, observationdiffs, nis, K1, K2, Rw=None, Rb=None, store=None):
         if ('Rw' or 'Rb') not in store:
             obsExample=classmeandiffs[0]
@@ -49,28 +56,25 @@ class TuckerDiscriminantAanalysis(ManifoldDiscrimantAnalysis):
         Rw=store['Rw'] #This assignment SHOULD be superflous now...
         Rw=store['Rb']
         
+        
         Rwsize = np.shape(Rw)
         nobs=Rwsize[-1]
         datadims=np.shape(Rb)
         nclasses=len(datadims)
         N=datadims[0] #This is a point where the two-dimensionality is hardcoded..
         M=datadims[1]
-        
         #We proceed to calculate all relevant matrices for the optimization step. 
         if 'QtRw' not in store:
-            QtRw_mm=np.tensordot
-            """
-                QtRw_mm=tmult(tmult(Rw,U1',1),U2',2);
-    QtRw=reshape(permute(QtRw_mm,[2 1 3]),[K2*K1,nobs]);
-
-            """
-            QtRw_mm=np.tensordot(np.tensordot(Rw,np.linalg.transpose(U1),axes=1),np.linalg.transpose(U2),axes=2)
-            QtRw=np.reshape(np.rollaxis(QtRw_mm,(1,0,2))(K2*K1,nobs))
+            QtRw_mm=np.tensordot(np.tensordot(Rw,np.linalg.transpose(U1),axes=(1,0)),np.linalg.transpose(U2),axes=(2,0)) #Something might be horribly wrong here...
+            QtRw=np.reshape(np.rollaxis(QtRw_mm,(1,0,2))(K2*K1,nobs)) #Not sure if this is the correct approach. Need MATLAB license to test original behavior
             store['QtRw']=QtRw
         else:
             QtRw=store['QtRw']
         if 'QtRb' not in store:
             #Same proceduere as above, with nobs replaced with nclasses, and Rw replaced with Rb
+            QtRb_mm=np.tensordot(np.tensordot(Rb,np.linalg.transpose(U1),axes=(1,0)),np.linalg.transpose(U2),axes=(2,0)) #Something might be horribly wrong here...
+            QtRb=np.reshape(np.rollaxis(QtRb_mm,(1,0,2))(K2*K1,nclasses)) #Not sure if this is the correct approach. Need MATLAB license to test original behavior
+            store['QtRw']=QtRw
             store['QtRb']=QtRb
         else:
             QtRb=store['QtRb']
