@@ -1,10 +1,12 @@
 from abc import ABC, abstractmethod
 import numpy as np
 from scipy.stats import ortho_group  
-
+import pymanopt as pymanopt
+import tensorflow as tf
+from tensorflow import keras
 
 class ManifoldDiscrimantAnalysis(ABC):
-    def __init__(self, Xs, classes, lowerdims=None, Us=None, opts=None, usestoppingcrit=True, maxits=1000, store={'Rw': 0, 'Rb': 0, 'QtRb': 0, 'QtRw':  0, 'QtBQ': 0, 'QtWQ': 0, 'QtWQinvQtBQ': 0}, optmeth='ManOpt'):
+    def __init__(self, Xs, classes, lowerdims=None, Us=None, opts=None, usestoppingcrit=True, maxits=1000, store={'Rw': 0, 'Rb': 0, 'QtRb': 0, 'QtRw':  0, 'QtBQ': 0, 'QtWQ': 0, 'QtWQinvQtBQ': 0, 'FdwrtQ': 0}, optmeth='ManOpt'):
         self.Xs=Xs
         self.classes=classes
         self.lowerdims=lowerdims
@@ -28,6 +30,8 @@ class ManifoldDiscrimantAnalysis(ABC):
         self.nmodes = len(self.sizeX);
 
         self.nsamples = np.shape(Xs);
+        self.F=0
+        self.G={'U1': 0, 'U2': 0}
         if Us==None:
             for i in range(self.nmodes):
                 Us[i]=ortho_group.rvs(dim=(np.shape(self.sizeX)[i])) #Contemplate changing this
@@ -38,20 +42,48 @@ class ManifoldDiscrimantAnalysis(ABC):
         self.Udifftol=Udifftol
         
     @abstractmethod 
-    def ObjectMatrixData(self): #This is a virtual function that any inheriting subclass should realize
+    def ObjectMatrixData(self, U,x, store, classmeandiffs, observationdiffs, nis, K1, K2,): #This is a virtual function that any inheriting subclass should realize
+        return(None)
+        
+    @abstractmethod
+    def QtCalculator(self):
+        return(None)
+    def QtCheck(self):
         return(None)
         
     def MyCost(self, x, store, classmeandiffs, observationdiffs, nis, K1, K2, Rw, Rb):
-        self.ObjectMatrixData(x, store, classmeandiffs, observationdiffs, nis, K1, K2, Rw, Rb)
-    def MyGrad():
-        self.ObjectMatrixData(self):
+        self.ObjectMatrixData(self,x, store, classmeandiffs, observationdiffs, nis, K1, K2)
+        self.F=-np.linalg.trace(self.store['QtWQinvQtBQ'])
+        
+    def MyGrad(self):
+
             """
-            This is the logical place to implement the function calculating G
+            Matlab code implementing the calculation of the gradient: 
+                Why can't we do this in TensorFlow or with autograd?
+            TTT=reshape(permute(reshape(FdwrtQ, M, N, 1, K), [2 4 1 3]),[N*K M]);
+            TTT3d = permute(reshape(TTT', [M, N, K]), [2 1 3]);
+            G1 = cell2mat(arrayfun(@(x)(TTT3d(:,:,x)*U2(:,x)), 1:K, 'UniformOutput', false));
+                           
+
+
+            TTT=reshape(permute(reshape(FdwrtQ, M, N, K, 1), [2 4 1 3]),[N M*K]);
+            TTT3d = permute(reshape(TTT, [N, M, K]), [2 1 3]);
+            G2 = cell2mat(arrayfun(@(x)(TTT3d(:,:,x)*U1(:,x)), 1:K, 'UniformOutput', false));
+
             """
-     def ClassBasedDifferences(self):
+            
+            self.G['U1'] = -G1;
+            self.G['U2'] = -G2;
+    def ClassBasedDifferences(self):
          """
          We should implement the classbased_differences method from the MATLAB code here. 
          """
+    def CalculateYs(self):
+        """
+        Calculate Y
+        """
+    def OptimizeOnManifold(self):
+        
 class TuckerDiscriminantAnalysis(ManifoldDiscrimantAnalysis):
     def QtCheck(self,Qt):
         if self.store[Qt]==0:
@@ -60,16 +92,16 @@ class TuckerDiscriminantAnalysis(ManifoldDiscrimantAnalysis):
             if Qt in {'QtRw', 'QtRb'}:
                 Qt_mm=np.tensordot(np.tensordot(self.Qt[:-2],np.linalg.transpose(U1),axes=(1,0)),np.linalg.transpose(U2),axes=(2,0)) #Something might be horribly wrong here...
                 Qt_temp=np.reshape(np.rollaxis(Qt_mm,(1,0,2))(K2*K1,N)) #Not sure if this is the correct approach. Need MATLAB license to test original behavior
-                return(Qt_temp)
             if Qt in {'QtWQ', 'QtBQ'}:
-                return(np.dot(self.store['QtRw'],self.store['QtRw']))
+                Qt_temp=np.dot(self.store['QtRw'],self.store['QtRw']))
             if Qt in {'QtWQinvQtBQ'}:
-                return(np.dot(self.store['QtWQ'],np.linalg.inv(self.store['QtBQ'])))          
+                Qt_temp=np.dot(self.store['QtWQ'],np.linalg.inv(self.store['QtBQ'])))          
             else: 
                 print("Wrong Qt specified")
+            self.store[Qt]=Qt_temp
             
-    def ObjectMatrixData(self, U, classmeandiffs, observationdiffs, nis, K1, K2):
-        if (self.store['Rw']==0 or self.store['Rb']==0):
+    def ObjectMatrixData(self, U, x, store, classmeandiffs, observationdiffs, nis, K1, K2,):
+        if (self.store['Rw']==[] or self.store['Rb']==[]):
             obsExample=classmeandiffs[0]
             sizeObs=np.shape(obsExample)
             I=sizeObs[0]
@@ -93,13 +125,8 @@ class TuckerDiscriminantAnalysis(ManifoldDiscrimantAnalysis):
         N=datadims[0] #This is a point where the two-dimensionality is hardcoded..
         M=datadims[1]
         #We proceed to calculate all relevant matrices for the optimization step. 
-        for j in {'QtRw', 'QtRb', 'QtWQ', 'QtBQ', 'QtWQinvQtBQ'}:
+        for j in {'QtRw', 'QtRb', 'QtWQ', 'QtBQ', 'QtWQinvQtBQ', 'FdwrtQ'}:
             self.QtCheck(j)
-        
-        F=np.linalg.trace(self.store['QtWQinvQtBQ'])
-        
-        
-        return(F, G) 
         
         
 class PARAFACDiscriminantAnalysis(ManifoldDiscrimantAnalysis):    
