@@ -1,11 +1,9 @@
 from abc import ABC, abstractmethod
 import numpy as np
-import scipy as scipy
 from scipy.stats import ortho_group  
-import pymanopt as pymanopt
+from pymanopt import Problem
+from pymanopt.manifolds import Product, Stiefel
 import tensorflow as tf
-from tensorflow import keras
-
 from pymanopt.solvers import ConjugateGradient
 
 
@@ -58,8 +56,7 @@ class ManifoldDiscrimantAnalysis(ABC,Pipe):
         #self.F=-np.linalg.trace(self.store['QtWQinvQtBQ'])
         Q = tf.Variable(tf.placeholder(tf.float32))
         self.MyCost = tf.linalg.trace(store['QtWQinvQtBQ'])
-
-
+        problem = Problem(manifold=manifold, cost=MyCost, arg=Q)
         """
         With tensorflow:
             Q=tf.Variable(tf.placeholder(tf.float32))
@@ -114,19 +111,21 @@ class ManifoldDiscrimantAnalysis(ABC,Pipe):
 
 class TuckerDiscriminantAnalysis(ManifoldDiscrimantAnalysis):
     def QtCheck(self,Qt):
-        if self.store[Qt]==0:
+        if self.store[Qt]==None:
             self.store[Qt]=self.QtCalculator(Qt)
     def QtCalculator(self,Qt,N=None,K1=None,K2=None,U1=None,U2=None):
-            if Qt in {'QtRw', 'QtRb'}:
-                Qt_mm=tf.tensordot(tf.tensordot(self.Qt[-2:],tf.linalg.transpose(U1),axes=(1,0)),tf.linalg.transpose(U2),axes=(2,0)) #Something might be horribly wrong here...
-                Qt_temp=tf.reshape(tf.roll(Qt_mm,(1,0,2))(K2*K1,N)) #Not sure if this is the correct approach. Need MATLAB license to test original behavior
-            if Qt in {'QtWQ', 'QtBQ'}:
-                Qt_temp=tf.dot(self.store['QtRw'],self.store['QtRw']))
-            if Qt in {'QtWQinvQtBQ'}:
-                Qt_temp=tf.dot(self.store['QtWQ'],tf.linalg.inv(self.store['QtBQ'])))
-            else: 
-                print("Wrong Qt specified")
-            self.store[Qt]=Qt_temp
+        U1=tf.Variable(tf.Matrix)
+        U2=tf.Variable(tf.Matrix)
+        if Qt in {'QtRw', 'QtRb'}:
+            Qt_mm=tf.tensordot(tf.tensordot(self.Qt[-2:],tf.linalg.transpose(U1),axes=(1,0)),tf.linalg.transpose(U2),axes=(2,0)) #Something might be horribly wrong here...
+            Qt_temp=tf.reshape(tf.roll(Qt_mm,(1,0,2))(K2*K1,N)) #Not sure if this is the correct approach. Need MATLAB license to test original behavior
+        if Qt in {'QtWQ', 'QtBQ'}: #This ain't right
+            Qt_temp=tf.dot(self.store['QtRw'],self.store['QtRw']))
+        if Qt in {'QtWQinvQtBQ'}:
+            Qt_temp=tf.dot(self.store['QtWQ'],tf.linalg.inv(self.store['QtBQ'])))
+        else:
+            print("Wrong Qt specified")
+        self.store[Qt]=Qt_temp
     def ObjectMatrixData(self, U, x, store, classmeandiffs, observationdiffs, nis, K1, K2):
         if (self.store['Rw']==[] or self.store['Rb']==[]):
             obsExample=classmeandiffs[0]
