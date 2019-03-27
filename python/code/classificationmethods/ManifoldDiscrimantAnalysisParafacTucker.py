@@ -1,23 +1,25 @@
 from abc import ABC, abstractmethod
 import numpy as np
+import scipy as scipy
 from scipy.stats import ortho_group  
 import pymanopt as pymanopt
 import tensorflow as tf
 from tensorflow import keras
 
-class ManifoldDiscrimantAnalysis(ABC):
-    def __init__(self, Xs, classes, lowerdims=None, Us=None, opts=None, usestoppingcrit=True, maxits=1000, store={'Rw': 0, 'Rb': 0, 'QtRb': 0, 'QtRw':  0, 'QtBQ': 0, 'QtWQ': 0, 'QtWQinvQtBQ': 0, 'FdwrtQ': 0}, optmeth='ManOpt'):
-        self.Xs=Xs
+from pymanopt.solvers import ConjugateGradient
+
+
+class ManifoldDiscrimantAnalysis(ABC,Pipe):
+    def __init__(self, classes, Us=None, opts=None, usestoppingcrit=True, maxits=1000,
+                 store={'Rw': None, 'Rb': None, 'QtRb': None, 'QtRw':  None, 'QtBQ': None, 'QtWQ': None, 'QtWQinvQtBQ': None, 'FdwrtQ': None},
+                 optmeth='ManOpt', MyCost=None):
         self.classes=classes
-        self.lowerdims=lowerdims
         self.Us=Us
         self.opts=opts
         self.usestoppingcrit=usestoppingcrit
         self.maxits=maxits
         self.store=store
         self.optmeth=optmeth
-        if lowerdims==None:
-            self.lowerdims=np.size(Xs[0])
         if optmeth not in ['bo13', 'wen12', 'ManOpt']:
             self.optmeth='ManOpt'
             print("Chosen optimization method", optmeth, "has not been implemented")
@@ -53,13 +55,25 @@ class ManifoldDiscrimantAnalysis(ABC):
         
     def MyCost(self, x, store, classmeandiffs, observationdiffs, nis, K1, K2, Rw, Rb):
         self.ObjectMatrixData(self,x, store, classmeandiffs, observationdiffs, nis, K1, K2)
-        self.F=-np.linalg.trace(self.store['QtWQinvQtBQ'])
+        #self.F=-np.linalg.trace(self.store['QtWQinvQtBQ'])
+        Q = tf.Variable(tf.placeholder(tf.float32))
+        self.MyCost = tf.linalg.trace(store['QtWQinvQtBQ'])
+
+
+        """
+        With tensorflow:
+            Q=tf.Variable(tf.placeholder(tf.float32))
+            self.MyCost=tf.linalg.trace(g(Q)) Operations to construct my cost inserted herein - potential to save a lot of calculations and definitions in the code when porting?
+                    
+            problem=Problem(manifold=manifold,cost=MyCost,arg=Q)
+            
+        """
         
     def MyGrad(self):
 
             """
             Matlab code implementing the calculation of the gradient: 
-                Why can't we do this in TensorFlow or with autograd?
+                Let's contemplate doing this in TensorFlow. It just requires us to unwrap all of the construction of QtWQinvQtBQ. 
             TTT=reshape(permute(reshape(FdwrtQ, M, N, 1, K), [2 4 1 3]),[N*K M]);
             TTT3d = permute(reshape(TTT', [M, N, K]), [2 1 3]);
             G1 = cell2mat(arrayfun(@(x)(TTT3d(:,:,x)*U2(:,x)), 1:K, 'UniformOutput', false));
@@ -68,7 +82,8 @@ class ManifoldDiscrimantAnalysis(ABC):
 
             TTT=reshape(permute(reshape(FdwrtQ, M, N, K, 1), [2 4 1 3]),[N M*K]);
             TTT3d = permute(reshape(TTT, [N, M, K]), [2 1 3]);
-            G2 = cell2mat(arrayfun(@(x)(TTT3d(:,:,x)*U1(:,x)), 1:K, 'UniformOutput', false));
+            G2 = cell2mat(arrayfun(@(x)(TTT3d(:,:,x)*U1(:,x)), 1:K, 'UniformOutput', false)).
+
 
             """
             
@@ -83,24 +98,36 @@ class ManifoldDiscrimantAnalysis(ABC):
         Calculate Y
         """
     def OptimizeOnManifold(self):
-        
+        if self.optmeth=='ManOpt':
+            ManifoldsOne=Stiefel(np.shape(Us[0])[0],np.shape(Us[0])[1])
+            ManifoldsTwo=Stiefel(np.shape(Us[0])[0],np.shape(Us[0])[1])
+            manifold=Product(ManifoldOne,ManifoldTwo)
+            problem=Problem(self.MyCost,manifold=manifold,arg=Q) #This assumes TensorFlow implementation... Else we have to implement the gradient and Hessian manually...
+            
+            solver=ConjugateGradient(problem, U, optoins)
+    def fit(self,Xs,Ys,lowerdims=None):
+        if lowerdims==None:
+            self.lowerdims=np.size(Xs[0])
+
+    def predict(self, Xs):
+        pass
+
 class TuckerDiscriminantAnalysis(ManifoldDiscrimantAnalysis):
     def QtCheck(self,Qt):
         if self.store[Qt]==0:
             self.store[Qt]=self.QtCalculator(Qt)
     def QtCalculator(self,Qt,N=None,K1=None,K2=None,U1=None,U2=None):
             if Qt in {'QtRw', 'QtRb'}:
-                Qt_mm=np.tensordot(np.tensordot(self.Qt[:-2],np.linalg.transpose(U1),axes=(1,0)),np.linalg.transpose(U2),axes=(2,0)) #Something might be horribly wrong here...
-                Qt_temp=np.reshape(np.rollaxis(Qt_mm,(1,0,2))(K2*K1,N)) #Not sure if this is the correct approach. Need MATLAB license to test original behavior
+                Qt_mm=tf.tensordot(tf.tensordot(self.Qt[-2:],tf.linalg.transpose(U1),axes=(1,0)),tf.linalg.transpose(U2),axes=(2,0)) #Something might be horribly wrong here...
+                Qt_temp=tf.reshape(tf.roll(Qt_mm,(1,0,2))(K2*K1,N)) #Not sure if this is the correct approach. Need MATLAB license to test original behavior
             if Qt in {'QtWQ', 'QtBQ'}:
-                Qt_temp=np.dot(self.store['QtRw'],self.store['QtRw']))
+                Qt_temp=tf.dot(self.store['QtRw'],self.store['QtRw']))
             if Qt in {'QtWQinvQtBQ'}:
-                Qt_temp=np.dot(self.store['QtWQ'],np.linalg.inv(self.store['QtBQ'])))          
+                Qt_temp=tf.dot(self.store['QtWQ'],tf.linalg.inv(self.store['QtBQ'])))
             else: 
                 print("Wrong Qt specified")
             self.store[Qt]=Qt_temp
-            
-    def ObjectMatrixData(self, U, x, store, classmeandiffs, observationdiffs, nis, K1, K2,):
+    def ObjectMatrixData(self, U, x, store, classmeandiffs, observationdiffs, nis, K1, K2):
         if (self.store['Rw']==[] or self.store['Rb']==[]):
             obsExample=classmeandiffs[0]
             sizeObs=np.shape(obsExample)
