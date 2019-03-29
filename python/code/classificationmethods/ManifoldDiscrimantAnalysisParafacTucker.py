@@ -101,9 +101,18 @@ class ManifoldDiscrimantAnalysis(ABC,Pipeline):
         sizeX = np.shape(self.Xsample1);
         nmodes = len(self.sizeX);
         nsamples = np.shape(Xs);
+        """
+        The functions should be called in the order:
+        The ObjectMatrixData function
+        The MyCost funcction, 
+        The optimize on manifold function
+        These three together should give sufficient fit information to feed into a pipeline. 
+        """
+
 
     def predict(self, Xs):
         pass
+
 
 class TuckerDiscriminantAnalysis(ManifoldDiscrimantAnalysis):
     def QtCheck(self,Qt):
