@@ -38,6 +38,7 @@ class ManifoldDiscrimantAnalysis(ABC,Pipeline):
     @abstractmethod
     def QtCalculator(self):
         return(None)
+    @abstractmethod
     def QtCheck(self):
         return(None)
         
@@ -56,30 +57,30 @@ class ManifoldDiscrimantAnalysis(ABC,Pipeline):
             
         """
         
-    def MyGrad(self):
-
-        """
-            Matlab code implementing the calculation of the gradient: 
-                Let's contemplate doing this in TensorFlow. It just requires us to unwrap all of the construction of QtWQinvQtBQ. 
-            TTT=reshape(permute(reshape(FdwrtQ, M, N, 1, K), [2 4 1 3]),[N*K M]);
-            TTT3d = permute(reshape(TTT', [M, N, K]), [2 1 3]);
-            G1 = cell2mat(arrayfun(@(x)(TTT3d(:,:,x)*U2(:,x)), 1:K, 'UniformOutput', false));
-                           
-
-
-            TTT=reshape(permute(reshape(FdwrtQ, M, N, K, 1), [2 4 1 3]),[N M*K]);
-            TTT3d = permute(reshape(TTT, [N, M, K]), [2 1 3]);
-            G2 = cell2mat(arrayfun(@(x)(TTT3d(:,:,x)*U1(:,x)), 1:K, 'UniformOutput', false)).
-
-            self.G['U1'] = -G1;
-            self.G['U2'] = -G2;
-        """
-        pass
-    def ClassBasedDifferences(self):
+    def ClassBasedDifferences(self,Xs,classes):
         """
         We should implement the classbased_differences method from the MATLAB code here.
         """
-        pass
+        nsamples = max(np.shape(Xs))
+        nclasses = len(np.unique(classes))
+        Xsum = np.sum(Xs, axis=0)
+        Xmean = Xsum/nsamples
+        Xsumsclasses=np.zeros((np.shape(Xs[0], nclasses)))
+        Xmeansclasses=np.zeros((np.shape(Xs[0], nclasses)))
+        enumerated_classes=range(nclasses)
+        nis=np.zeros(nclasses)
+
+        for i in range(nclasses):
+            locations = np.nonzero(classes == i)
+            nis[i] = len(locations)
+            Xsumsclasses[i] = sum(Xs, locations)
+            Xmeansclasses = Xsumsclasses[i]/nis[i]
+
+        for i in range(nsamples): #This should be vectorized
+            xi_m_cmeans = Xs[i]-Xmeansclasses[classes[i]]
+            
+        cmeans_m_xmeans = Xmeansclasses-Xmean
+        return cmeans_m_xmeans, xi_m_cmeans, nis
     def CalculateYs(self):
         """
         Calculate Y
@@ -90,12 +91,12 @@ class ManifoldDiscrimantAnalysis(ABC,Pipeline):
             ManifoldOne=Stiefel(np.shape(self.Us[0])[0],np.shape(self.Us[0])[1]) #This is hardcoding it to the two-dimensional case..
             ManifoldTwo=Stiefel(np.shape(self.Us[0])[0],np.shape(self.Us[0])[1])
             manifold=Product(ManifoldOne,ManifoldTwo)
-            Q = tf.Variable(tf.placeholder(tf.float32))
+            Q = tf.Variable(tf.placeholder(tf.Matrix))
             problem=Problem(manifold=manifold,cost=self.MyCost,arg=Q) #This assumes TensorFlow implementation... Else we have to implement the gradient and Hessian manually...
             solver=ConjugateGradient(problem, Q, options)
             return(solver)
     def fit(self,Xs,Ys,lowerdims=None):
-        if lowerdims==None:
+        if lowerdims is None:
             self.lowerdims=np.size(Xs[0])
         Xsample1 = Xs[0];
         sizeX = np.shape(self.Xsample1);
