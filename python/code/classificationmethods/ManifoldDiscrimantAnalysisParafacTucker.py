@@ -8,11 +8,10 @@ from pymanopt.solvers import ConjugateGradient
 from sklearn.pipeline import Pipeline
 
 class ManifoldDiscrimantAnalysis(ABC,Pipeline):
-    def __init__(self, classes, Us=None, opts=None, usestoppingcrit=True, maxits=1000,
+    def __init__(self, classes, opts=None, usestoppingcrit=True, maxits=1000,
                  store={'Rw': None, 'Rb': None, 'QtRb': None, 'QtRw':  None, 'QtBQ': None, 'QtWQ': None, 'QtWQinvQtBQ': None},
                  optmeth='ManOpt'):
         self.classes=classes
-        self.Us=Us
         self.opts=opts
         self.usestoppingcrit=usestoppingcrit
         self.maxits=maxits
@@ -23,11 +22,9 @@ class ManifoldDiscrimantAnalysis(ABC,Pipeline):
             print("Chosen optimization method", optmeth, "has not been implemented")
         self.Fdifftol=Fdifftol=10**(-10)
         self.Udifftol=Udifftol=10**(-12)
-        if Us==None:
-            for i in range(self.nmodes):
-                Us[i]=ortho_group.rvs(dim=(np.shape(self.sizeX)[i])) #Contemplate changing this
         self.MyCost=None
-    def SetTolerances(self,Fdifftol=10**(-10), Udifftol=10**(-12)):
+
+    def set_tolerances(self, Fdifftol=10**(-10),  Udifftol=10**(-12)):
         self.Fdifftol=Fdifftol
         self.Udifftol=Udifftol
         
@@ -101,13 +98,18 @@ class ManifoldDiscrimantAnalysis(ABC,Pipeline):
             solver=ConjugateGradient(problem, Q, options)
             return(solver)
 
-    def fit(self, Xs, Ys, lowerdims=None):
+    def fit(self, Xs, Ys, lowerdims=None, Us=None):
         if lowerdims is None:
             self.lowerdims=np.size(Xs[0])
         Xsample1 = Xs[0];
         sizeX = np.shape(self.Xsample1);
         nmodes = len(self.sizeX);
         nsamples = np.shape(Xs);
+
+        if Us==None:
+            for i in range(self.nmodes):
+                Us[i]=ortho_group.rvs(dim=(np.shape(self.sizeX)[i])) #Contemplate changing this
+
         """
         The functions should be called in the order:
         The ObjectMatrixData function

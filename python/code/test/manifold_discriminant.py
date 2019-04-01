@@ -31,7 +31,10 @@ def test_initialize_manifold_without_u():
 
 
 def test_calculate_set_tolerances():
-    pass
+    modeller=ManifoldDiscrimantAnalysis(np.zeros((2, 1)))
+    modeller.SetTolerances(0, 0)
+    assert modeller.FFdifftol==0, modeller.Udifftol==0
+
 
 
 def test_class_based_differences():
