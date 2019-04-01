@@ -42,12 +42,17 @@ class ManifoldDiscrimantAnalysis(ABC,Pipeline):
     def QtCheck(self):
         return(None)
         
-    def MyCost(self, x, store, classmeandiffs, observationdiffs, nis, K1, K2, Rw, Rb):
+    def my_cost(self, x, store, classmeandiffs, observationdiffs, nis, K1, K2, Rw, Rb):
         self.ObjectMatrixData(self,x, store, classmeandiffs, observationdiffs, nis, K1, K2)
-        #self.F=-np.linalg.trace(self.store['QtWQinvQtBQ'])
+        """
+        self.F=-np.linalg.trace(self.store['QtWQinvQtBQ'])
         Q = tf.Variable(tf.placeholder(tf.float32))
-        self.MyCost = tf.linalg.trace(store['QtWQinvQtBQ'])
+        """
+
+        self.MyCost = tf.linalg.trace(self.store['QtWQinvQtBQ'])
+
         #problem = Problem(manifold=manifold, cost=MyCost, arg=Q)
+
         """
         With tensorflow:
             Q=tf.Variable(tf.placeholder(tf.float32))
@@ -78,7 +83,7 @@ class ManifoldDiscrimantAnalysis(ABC,Pipeline):
 
         for i in range(nsamples): #This should be vectorized
             xi_m_cmeans = Xs[i]-Xmeansclasses[classes[i]]
-            
+
         cmeans_m_xmeans = Xmeansclasses-Xmean
         return cmeans_m_xmeans, xi_m_cmeans, nis
     def CalculateYs(self):
@@ -95,7 +100,8 @@ class ManifoldDiscrimantAnalysis(ABC,Pipeline):
             problem=Problem(manifold=manifold,cost=self.MyCost,arg=Q) #This assumes TensorFlow implementation... Else we have to implement the gradient and Hessian manually...
             solver=ConjugateGradient(problem, Q, options)
             return(solver)
-    def fit(self,Xs,Ys,lowerdims=None):
+
+    def fit(self, Xs, Ys, lowerdims=None):
         if lowerdims is None:
             self.lowerdims=np.size(Xs[0])
         Xsample1 = Xs[0];
