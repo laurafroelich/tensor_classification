@@ -9,8 +9,8 @@ function test_cell_array_to_nd_array_arbitraryn_modes(testCase)
     testCase.applyFixture(PathFixture('../', 'IncludeSubfolders', true));
 
     n_obs = 5;
-    n_modes = randsample(2:4, 1, true);
-    obs_dimensions = randsample(1:3, n_modes, true);
+    n_modes = randsample(2:10, 1, true);
+    obs_dimensions = randsample(1:8, n_modes, true);
     xs_nd_array = zeros([obs_dimensions, n_obs]);
     xs_cell = cell(n_obs);
     S.type = '()';
