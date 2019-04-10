@@ -9,16 +9,16 @@ function test_cell_array_to_nd_array_arbitraryn_modes(testCase)
     testCase.applyFixture(PathFixture('../', 'IncludeSubfolders', true));
 
     n_obs = 5;
-    n_modes = randsample(2:4, 1);
-    obs_dimensions = randsample(1:3, n_modes);
+    n_modes = randsample(2:4, 1, true);
+    obs_dimensions = randsample(1:3, n_modes, true);
     xs_nd_array = zeros([obs_dimensions, n_obs]);
     xs_cell = cell(n_obs);
     S.type = '()';
-    S.subs = [repmat({':'}, 1, n_modes)]
+    subs = repmat({':'}, 1, n_modes);
     
     for iobs = 1:n_obs
+        S.subs = [subs, iobs];
         rand_obs = normrnd(0, 1, obs_dimensions);
-        %xs_nd_array(:,iobs) = rand_obs;
         xs_nd_array = subsasgn(xs_nd_array, S, rand_obs);
         xs_cell{iobs} = rand_obs;
         
