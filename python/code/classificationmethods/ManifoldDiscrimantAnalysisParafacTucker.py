@@ -54,30 +54,32 @@ class ManifoldDiscrimantAnalysis(ABC, Pipeline):
             problem = Problem(manifold = manifold, cost = MyCost, arg = Q)
             
         """
-        
-    def class_based_differences(self, Xs, classes):
+    @staticmethod
+    def class_based_differences(Xs, classes):
         """
         Calculates the class based differences.
         """
+        classes = np.array(classes)
+        Xs = np.array(Xs)
         nsamples = max(np.shape(Xs))
         nclasses = len(np.unique(classes))
         Xsum = np.sum(Xs, axis=0)
         Xmean = Xsum/nsamples
-
         shape = np.shape(Xs[0])
 
-        Xsumsclasses = np.zeros([*shape, nclasses])
-        Xmeansclasses = np.zeros([*shape, nclasses])
+        Xsumsclasses = np.zeros([nclasses, *shape])
+        Xmeansclasses = np.zeros([nclasses, *shape])
         nis = np.zeros(nclasses)
 
         for i in range(nclasses):
             locations = np.nonzero(classes == i)
-            nis[i] = len(locations)
-            Xsumsclasses[i] = sum(Xs, locations)
+            nis[i] = max(np.shape(locations))
+            Xsumsclasses[i] = np.sum(Xs[locations], axis=0)
             Xmeansclasses = Xsumsclasses[i]/nis[i]
+            #print('Xclasses', Xsumsclasses)
 
         for i in range(nsamples): #This should be vectorized
-            xi_m_cmeans = Xs[i]-Xmeansclasses[classes[i]]
+            xi_m_cmeans = Xs[i] - Xmeansclasses[classes[i]]
 
         cmeans_m_xmeans = Xmeansclasses-Xmean
         return cmeans_m_xmeans, xi_m_cmeans, nis
