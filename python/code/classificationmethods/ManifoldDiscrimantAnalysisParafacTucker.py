@@ -57,14 +57,17 @@ class ManifoldDiscrimantAnalysis(ABC, Pipeline):
         
     def class_based_differences(self, Xs, classes):
         """
-        We should implement the classbased_differences method from the MATLAB code here.
+        Calculates the class based differences.
         """
         nsamples = max(np.shape(Xs))
         nclasses = len(np.unique(classes))
         Xsum = np.sum(Xs, axis=0)
         Xmean = Xsum/nsamples
-        Xsumsclasses = np.zeros((np.shape(Xs[0], nclasses)))
-        Xmeansclasses = np.zeros((np.shape(Xs[0], nclasses)))
+
+        shape = np.shape(Xs[0])
+
+        Xsumsclasses = np.zeros([*shape, nclasses])
+        Xmeansclasses = np.zeros([*shape, nclasses])
         nis = np.zeros(nclasses)
 
         for i in range(nclasses):
