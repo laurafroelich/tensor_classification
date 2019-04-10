@@ -6,12 +6,12 @@ from pymanopt.manifolds import Product, Stiefel
 import tensorflow as tf
 from pymanopt.solvers import ConjugateGradient
 from sklearn.pipeline import Pipeline
-import tensorflow.Session as sess
+
 
 class ManifoldDiscrimantAnalysis(ABC, Pipeline):
-    def __init__(self, classes, opts = None, usestoppingcrit = True, maxits = 1000, 
-                 store = {'Rw': None, 'Rb': None, 'QtRb': None, 'QtRw':  None, 'QtBQ': None, 'QtWQ': None, 'QtWQinvQtBQ': None}, 
-                 optmeth = 'ManOpt'):
+    def __init__(self, classes=None, opts=None, usestoppingcrit=True, maxits=1000,
+                 store={'Rw': None, 'Rb': None, 'QtRb': None, 'QtRw':  None, 'QtBQ': None, 'QtWQ': None, 'QtWQinvQtBQ': None},
+                 optmeth='ManOpt'):
         self.classes = classes
         self.opts = opts
         self.usestoppingcrit = usestoppingcrit
@@ -27,20 +27,14 @@ class ManifoldDiscrimantAnalysis(ABC, Pipeline):
         self.rotations = None
 
 
-    def set_tolerances(self, Fdifftol = 10**(-10),  Udifftol = 10**(-12)):
+    def set_tolerances(self, Fdifftol=10**(-10), Udifftol=10**(-12)):
         self.Fdifftol = Fdifftol
         self.Udifftol = Udifftol
         
     @abstractmethod 
-    def object_matrix_data(self, U, x, store, classmeandiffs, observationdiffs, nis, K1, K2, ): #This is a virtual function that any inheriting subclass should realize
+    def object_matrix_data(self, classmeandiffs, observationdiffs, nis, K1, K2, ): #This is a virtual function that any inheriting subclass should realize
         return(None)
-        
-    @abstractmethod
-    def QtCalculator(self):
-        return(None)
-    @abstractmethod
-    def QtCheck(self):
-        return(None)
+
 
     @abstractmethod
     def my_cost(self): #, x, store, classmeandiffs, observationdiffs, nis, K1, K2):
@@ -67,14 +61,14 @@ class ManifoldDiscrimantAnalysis(ABC, Pipeline):
         """
         nsamples = max(np.shape(Xs))
         nclasses = len(np.unique(classes))
-        Xsum = np.sum(Xs, axis = 0)
+        Xsum = np.sum(Xs, axis=0)
         Xmean = Xsum/nsamples
         Xsumsclasses = np.zeros((np.shape(Xs[0], nclasses)))
         Xmeansclasses = np.zeros((np.shape(Xs[0], nclasses)))
         nis = np.zeros(nclasses)
 
         for i in range(nclasses):
-            locations = np.nonzero(classes  ==   i)
+            locations = np.nonzero(classes == i)
             nis[i] = len(locations)
             Xsumsclasses[i] = sum(Xs, locations)
             Xmeansclasses = Xsumsclasses[i]/nis[i]
@@ -86,20 +80,19 @@ class ManifoldDiscrimantAnalysis(ABC, Pipeline):
         return cmeans_m_xmeans, xi_m_cmeans, nis
 
     def optimize_on_manifold(self, options):
-        if self.optmeth  ==   'ManOpt':
+        if self.optmeth == 'ManOpt':
             manifold_one = Stiefel(np.shape(self.Us[0])[0], np.shape(self.Us[0])[1]) #This is hardcoding it to the two-dimensional case..
             manifold_two = Stiefel(np.shape(self.Us[0])[0], np.shape(self.Us[0])[1])
             manifold = Product(manifold_one, manifold_two)
-            Q = tf.Variable(tf.placeholder(tf.Matrix))
+            Q = tf.Variable(tf.placeholder(tf.float32))
             problem = Problem(manifold = manifold, cost = self.my_cost(self), arg = Q) #This assumes TensorFlow implementation... Else we have to implement the gradient and Hessian manually...
             solver = ConjugateGradient(problem, Q, options)
             return solver
 
-    def fit(self, Xs, classes = None, rotations = None):
-        if lowerdims is None:
-            lowerdims = np.shape(Xs[0])
+    def fit(self, Xs, classes=None, rotations=None):
+        lowerdims = np.shape(Xs[0])
 
-        K1 = lowerdims[0]
+        K1 = lowerdims[0] #This hardcodes the two-dimensional case.
         K2 = lowerdims[1]
         #if Us is None:
         #    for i in range(self.nmodes):
@@ -112,44 +105,33 @@ class ManifoldDiscrimantAnalysis(ABC, Pipeline):
         self.optimize_on_manifold(self)
         self.transform(self, Xs)
 
-        """
-        The functions should be called in the order:
-        The object_matrix_data function
-        The MyCost funcction, 
-        The optimize on manifold function
-        These three together should give sufficient fit information to feed into a pipeline. 
-        """
-
-    def transform(self, Xs):
-        """
-        Use the Xs to calulate the Ys here, ..?? Check with Literature...
-        :param Xs:
-        :return:
-        """
+    def _transform(self, Xs):
         rotation1 = tf.variable(tf.placeholder(tf.float32))
         rotation2 = tf.variable(tf.placeholder(tf.float32))
         input_data = tf.variable(tf.placeholder(tf.float32))
-        product_rotation = tf.tensordot(tf.transpose(rotation1), tf.transpose(rotation2), axes = 0)
-        data_transformer = tf.tensordot(input_data, product_rotation, axes = [0, 1]) #Double check that this is correct
-        transformed_data = sess.run(data_transformer, 
-                                    feed_dict = {rotation1: self.rotations[0], rotation2: self.rotations[1], input_data: Xs})
+        product_rotation = tf.tensordot(tf.transpose(rotation1), tf.transpose(rotation2), axes=0)
+        data_transformer = tf.tensordot(input_data, product_rotation, axes=[0, 1]) #Double check that this is correct
+        with tf.Session as sess:
+            transformed_data = sess.run(data_transformer,
+                                        feed_dict={rotation1: self.rotations[0], rotation2: self.rotations[1], input_data: Xs})
+
         return transformed_data
 
 
 class TuckerDiscriminantAnalysis(ManifoldDiscrimantAnalysis):
     def QtCheck(self, Qt):
-        if self.store[Qt] =  = None:
+        if self.store[Qt] is None:
             self.store[Qt] = self.QtCalculator(Qt)
 
-    def Qt_initializer(self, Qt, K1, K2):
+    def Qt_initializer(self, Qt, K1, K2, N, M):
 
         rotation1 = tf.Variable(tf.placeholder(tf.float32))
         rotation2 = tf.Variable(tf.placeholder(tf.float32))
         if Qt in {'QtRw', 'QtRb'}:
-            Qt_mm = tf.tensordot(tf.tensordot(self.Qt[-2:], tf.linalg.transpose(rotation1), axes = (1, 0)), tf.linalg.transpose(rotation2), axes = (2, 0)) #Something might be horribly wrong here...
+            Qt_mm = tf.tensordot(tf.tensordot(self.Qt[-2:], tf.linalg.transpose(rotation1), axes=(1, 0)), tf.linalg.transpose(rotation2), axes = (2, 0)) #Something might be horribly wrong here...
             Qt_temp = tf.reshape(tf.roll(Qt_mm, (1, 0, 2))(K2*K1, N)) #Not sure if this is the correct approach. Need MATLAB license to test original behavior
-        if Qt in {'QtWQ', 'QtBQ'}: #This ain't right
-            Qt_temp = tf.matmul(self.store['QtRw'], self.store['QtRw'])
+        if Qt in {'QtWQ', 'QtBQ'}:
+            Qt_temp = tf.matmul('QtR'+Qt[2].lower(), self.store['QtR'+Qt[2].lower()]) # #This is not the best way to do this.. But it's not the worst?
         if Qt in {'QtWQinvQtBQ'}:
             Qt_temp = tf.matmul(self.store['QtBQ'], tf.linalg.inv(self.store['QtWQ']))
         else:
@@ -158,7 +140,7 @@ class TuckerDiscriminantAnalysis(ManifoldDiscrimantAnalysis):
 
 
     def object_matrix_data(self, classmeandiffs, observationdiffs, nis, K2, K1):
-        if self.store['Rw']  ==   [] or self.store['Rb']  ==   []:
+        if self.store['Rw'] is None or self.store['Rb'] is None:
             obsExample = classmeandiffs[0]
             sizeObs = np.shape(obsExample)
             I = sizeObs[0]
@@ -183,7 +165,7 @@ class TuckerDiscriminantAnalysis(ManifoldDiscrimantAnalysis):
         M = datadims[1]
         #We proceed to calculate all relevant matrices for the optimization step.
         for j in {'QtRw', 'QtRb', 'QtWQ', 'QtBQ', 'QtWQinvQtBQ'}:
-            self.InitalizeQt(j, K2, K1)
+            self.Qt_initializer(j, K2, K1, N,  M)
 
     def my_cost(self):  # , x, store, classmeandiffs, observationdiffs, nis, K1, K2):
         # self.object_matrix_data(self, x, store, classmeandiffs, observationdiffs, nis, K1, K2)
