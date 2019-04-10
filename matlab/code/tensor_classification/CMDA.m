@@ -1,7 +1,13 @@
 function [Us, iit, errs, objfuncvals, objfuncvals_traceratio, Ys] = CMDA(Xs, classes, varargin)
 % [Us, iit, errs, objfuncvals, Ys] = CMDA(Xs, classes, varargin)
+%
+% Use CMDA to find projection matrices for each mode of the input data in Xs.
+% Xs is assumed to be a cell array, with each entry containing an
+% n-dimensional observation tensor.
+%
 % Mandatory input:
-% Xs:           Cell array containing the observed tensors.
+% Xs:           Cell array containing the observed tensors or array with 
+%               observations along last dimension.
 % classes:      Vector containing class labels. Classes must be sequential
 %               numbers starting from one.
 %
@@ -41,15 +47,17 @@ function [Us, iit, errs, objfuncvals, objfuncvals_traceratio, Ys] = CMDA(Xs, cla
 %   IEEE Transactions on Pattern Analysis and Machine Intelligence
 
 %% read input and set parameters
+
+if isa(Xs, 'cell')
+    Xs = cell_array_to_nd_array(Xs);
+    % Xs = reshape(cell2mat(classmeandiffs), I, J, nclasses);
+end
+    
+
 Xsample1 = Xs{1};
 sizeX = size(Xsample1);
 tol=1e-6;
-nmodes = 2;
-
-if length(sizeX) > 2
-    error(['CMDA.m: Input data has more than two dimensions. '...
-        'This function is only customised for two-dimensional (i.e. matrix) data.'])
-end
+nmodes = length(sizeX);
 
 if length(varargin) >= 1 && ~isempty(varargin{1})
     Tmax = varargin{1};
@@ -125,6 +133,7 @@ nobs = length(observationdiffs);
 
 % matricise classmeandifss and observationdiffs to use fast matrix
 % multiplication.
+
 classmeandiffstensor = reshape(cell2mat(classmeandiffs), ...
     I, J, nclasses);
 observationdiffstensor = reshape(cell2mat(observationdiffs), ...
