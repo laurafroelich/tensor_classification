@@ -57,7 +57,16 @@ class ManifoldDiscrimantAnalysis(ABC, Pipeline):
     @staticmethod
     def class_based_differences(Xs, classes):
         """
-        Calculates the class based differences.
+        Calculate class based differences.
+
+        The purpose of this method is, given a labelled input data set to output the means of each class, and the data set recentered around the class means for each point.
+
+        :param Xs: numpy tensor containing the input data, indexed along the first mode.
+        :param classes: The class for each input data point.
+
+        :return nis : Numpy-array list of samples in each class
+        :return cmeans_m_xmeans : Numpy-array containing means for each class minus the overall mean
+        :return xi_m_cmeans : Numpy-array of the samples centered around the class means
         """
         classes = np.array(classes)
         Xs = np.array(Xs)
@@ -76,7 +85,6 @@ class ManifoldDiscrimantAnalysis(ABC, Pipeline):
             nis[i] = max(np.shape(locations))
             Xsumsclasses[i] = np.sum(Xs[locations], axis=0)
             Xmeansclasses = Xsumsclasses[i]/nis[i]
-            #print('Xclasses', Xsumsclasses)
 
         for i in range(nsamples): #This should be vectorized
             xi_m_cmeans = Xs[i] - Xmeansclasses[classes[i]]
