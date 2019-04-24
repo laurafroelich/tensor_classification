@@ -50,12 +50,10 @@ function [Us, iit, errs, objfuncvals, objfuncvals_traceratio, Ys] = CMDA(Xs, cla
 
 if isa(Xs, 'cell')
     Xs = cell_array_to_nd_array(Xs);
-    % Xs = reshape(cell2mat(classmeandiffs), I, J, nclasses);
 end
     
-
-Xsample1 = Xs{1};
-sizeX = size(Xsample1);
+sizeXs = size(Xs);
+sizeX = sizeXs(1:(end-1));
 tol=1e-6;
 nmodes = length(sizeX);
 

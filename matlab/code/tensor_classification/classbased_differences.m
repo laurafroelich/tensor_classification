@@ -12,17 +12,11 @@ function [cmean_m_xmeans, xi_m_cmeans, nis] = classbased_differences(Xs, classes
 nsamples = length(Xs);
 nclasses = length(unique(classes));
 
-
-
-Xsum = Xs{1};
-for isample = 2:nsamples
-    Xsum = Xsum + Xs{isample};
+if isa(Xs, 'cell')
+    Xs = cell_array_to_nd_array(Xs);
 end
-Xmean = Xsum/nsamples;
 
-%nmodes = length(size(Xs{1}));
-%catXs=cat(nmodes+1,Xs{:});
-%Xmean = mean(catXs, nmodes+1); 
+Xmean = mean(Xs, 1);
 
 Xmeansclasses = cell(1, nclasses);
 Xsumsclasses = cell(1, nclasses);

@@ -2,7 +2,7 @@ function tests = test_classification_nd
     tests = functiontests(localfunctions);
 end
 
-function wip_test_cmda_discrimination(testCase)
+function test_cmda_discrimination(testCase)
     import matlab.unittest.fixtures.PathFixture
     testCase.applyFixture(PathFixture('../', 'IncludeSubfolders', true));
     testCase.applyFixture(PathFixture('../../../../matlab_additions/02582nway_models/', 'IncludeSubfolders', true));
