@@ -1,65 +1,53 @@
 from abc import ABC, abstractmethod
 import numpy as np
-from scipy.stats import ortho_group  
 from pymanopt import Problem
 from pymanopt.manifolds import Product, Stiefel
 import tensorflow as tf
 from pymanopt.solvers import ConjugateGradient
-from sklearn.pipeline import Pipeline
 
 
-class ManifoldDiscrimantAnalysis(ABC, Pipeline):
-    def __init__(self, classes=None, opts=None, usestoppingcrit=True, maxits=1000,
-                 store={'Rw': None, 'Rb': None, 'QtRb': None, 'QtRw':  None, 'QtBQ': None, 'QtWQ': None, 'QtWQinvQtBQ': None},
-                 optmeth='ManOpt'):
-        self.classes = classes
-        self.opts = opts
-        self.usestoppingcrit = usestoppingcrit
-        self.maxits = maxits
-        self.store = store
-        self.optmeth = optmeth
-        if optmeth not in ['bo13', 'wen12', 'ManOpt']:
-            self.optmeth = 'ManOpt'
-            print("Chosen optimization method", optmeth, "has not been implemented")
+class ManifoldDiscrimantAnalysis(ABC):
+    """
+    This is an abstract class serving to implement joint methods between PARAFAC and Tucker discriminant analysis.
+    The class implements optimization, fitting and calculating class-based differences.
+    Methods which have to be defined in either case but are not shared are declared as abstract.
+    """
+    def __init__(self, Rw=None, Rb=None):
+        """
+        The initialization method for the PARAFAC and Tucker models, creating an empty cost function, empty list of
+            optimal rotations and a dictionary for saving Tensorflow functions defining 'Qt*'.
+
+        :param Rw:  Matrix specifying pre-calculated'Rw' to avoid calculations.
+        :param Rb:  Matrix specifying pre-calculated'Rw' to avoid calculations.
+        """
+        self.store ={'Rw': Rw, 'Rb': Rb, 'QtRb': None,
+                     'QtRw':  None, 'QtBQ': None, 'QtWQ': None, 'QtWQinvQtBQ': None}
         self.Fdifftol = Fdifftol = 10**(-10)
         self.Udifftol = Udifftol = 10**(-12)
         self.MyCost = None
         self.rotations = None
 
-
     def set_tolerances(self, Fdifftol=10**(-10), Udifftol=10**(-12)):
         self.Fdifftol = Fdifftol
         self.Udifftol = Udifftol
-        
+
+    # This is a virtual function that any inheriting subclass should realize
     @abstractmethod 
-    def object_matrix_data(self, classmeandiffs, observationdiffs, nis, K1, K2, ): #This is a virtual function that any inheriting subclass should realize
+    def object_matrix_data(self, classmeandiffs, observationdiffs, nis, K1, K2, ):
         return(None)
 
 
     @abstractmethod
-    def my_cost(self): #, x, store, classmeandiffs, observationdiffs, nis, K1, K2):
+    def my_cost(self):
         pass
-        """
-        self.F = -np.linalg.trace(self.store['QtWQinvQtBQ'])
-        Q = tf.Variable(tf.placeholder(tf.float32))
-        """
 
-        #problem = Problem(manifold = manifold, cost = MyCost, arg = Q)
-
-        """
-        With tensorflow:
-            Q = tf.Variable(tf.placeholder(tf.float32))
-            self.MyCost = tf.linalg.trace(g(Q)) Operations to construct my cost inserted herein - potential to save a lot of calculations and definitions in the code when porting?
-                    
-            problem = Problem(manifold = manifold, cost = MyCost, arg = Q)
-            
-        """
     @staticmethod
     def class_based_differences(Xs, classes):
         """
         Calculate class based differences.
 
-        The purpose of this method is, given a labelled input data set to output the means of each class, and the data set recentered around the class means for each point.
+        The purpose of this method is, given a labelled input data set to output the means of each class,
+        and the data set recentered around the class means for each point.
 
         :param Xs: numpy tensor containing the input data, indexed along the first mode.
         :param classes: The class for each input data point.
@@ -79,6 +67,7 @@ class ManifoldDiscrimantAnalysis(ABC, Pipeline):
         Xsumsclasses = np.zeros([nclasses, *shape])
         Xmeansclasses = np.zeros([nclasses, *shape])
         nis = np.zeros(nclasses)
+        xi_m_cmeans=np.zeros([nsamples]+list(shape))
 
         for i in range(nclasses):
             locations = np.nonzero(classes == i)
@@ -86,71 +75,96 @@ class ManifoldDiscrimantAnalysis(ABC, Pipeline):
             Xsumsclasses[i] = np.sum(Xs[locations], axis=0)
             Xmeansclasses = Xsumsclasses[i]/nis[i]
 
-        for i in range(nsamples): #This should be vectorized
-            xi_m_cmeans = Xs[i] - Xmeansclasses[classes[i]]
+        for i in range(nsamples):  # This should be vectorized
+            xi_m_cmeans[i] = Xs[i] - Xmeansclasses[classes[i]]
 
         cmeans_m_xmeans = Xmeansclasses-Xmean
+
         return cmeans_m_xmeans, xi_m_cmeans, nis
 
-    def optimize_on_manifold(self, options):
-        if self.optmeth == 'ManOpt':
-            manifold_one = Stiefel(np.shape(self.Us[0])[0], np.shape(self.Us[0])[1]) #This is hardcoding it to the two-dimensional case..
-            manifold_two = Stiefel(np.shape(self.Us[0])[0], np.shape(self.Us[0])[1])
-            manifold = Product(manifold_one, manifold_two)
-            Q = tf.Variable(tf.placeholder(tf.float32))
-            problem = Problem(manifold = manifold, cost = self.my_cost(self), arg = Q) #This assumes TensorFlow implementation... Else we have to implement the gradient and Hessian manually...
-            solver = ConjugateGradient(problem, Q, options)
+    def optimize_on_manifold(self, options, optmeth):
+        if optmeth not in ['bo13', 'wen12', 'ManOpt']:
+            print("Chosen optimization method", optmeth, "has not been implemented, using 'ManOpt' ")
+            optmeth = 'ManOpt'
+
+        if optmeth == 'ManOpt':
+            # This is hardcoding it to the two-dimensional case..
+            manifold_one = Stiefel(np.shape(self.rotations[0])[0], np.shape(self.rotations[0])[1])
+            manifold_two = Stiefel(np.shape(self.rotations[0])[0], np.shape(self.rotations[0])[1])
+            manifold = Product((manifold_one, manifold_two))
+            optimization_variable = tf.Variable(tf.placeholder(tf.float32))
+            problem = Problem(manifold=manifold, cost=self.my_cost(), arg=optimization_variable)
+            solver = ConjugateGradient(problem, optimization_variable, options)
+
             return solver
 
-    def fit(self, Xs, classes=None, rotations=None):
+    def fit(self, Xs, classes, optmeth, options=None):
         lowerdims = np.shape(Xs[0])
 
         K1 = lowerdims[0] #This hardcodes the two-dimensional case.
         K2 = lowerdims[1]
-        #if Us is None:
-        #    for i in range(self.nmodes):
-        #        Us[i] = ortho_group.rvs(dim = (np.shape(self.sizeX)[i])) #Contemplate changing this
 
-        cmeans_m_xmeans, xi_m_cmeans, nis = self.ClassBasedDifferences(self, Xs, classes)
+        cmeans_m_xmeans, xi_m_cmeans, nis = self.class_based_differences(Xs, classes)
 
-        self.object_matrix_data(self, cmeans_m_xmeans, xi_m_cmeans, nis, K1, K2)
-        self.my_cost(self)
-        self.optimize_on_manifold(self)
-        self.transform(self, Xs)
+        self.object_matrix_data(cmeans_m_xmeans, xi_m_cmeans, nis, K1, K2)
+        self.my_cost()
+        self.optimize_on_manifold(options, optmeth)
+        fitted_data = self.transform(Xs)
+        return fitted_data
 
-    def _transform(self, Xs):
-        rotation1 = tf.variable(tf.placeholder(tf.float32))
-        rotation2 = tf.variable(tf.placeholder(tf.float32))
-        input_data = tf.variable(tf.placeholder(tf.float32))
+    def transform(self, Xs):
+        """
+        This method transforms the observed data with the optimized rotations from the manifold optimization step.
+
+        The data is transformed by acting with the tensor product of the rotations on each observation.
+           This method assumes two-dimensional observations as currently written.
+           The ´transform´ method overrides the Pipeline transform method,
+           and is a prerequisite for fitting into a pipeline.
+
+
+        :params: Xs: Tensor containing the input data to be transformed.
+        :return: transformed_data, Tensor containing the data transformed by the optimal transformations.
+        """
+
+
+        rotation1 = tf.Variable(tf.placeholder(tf.float32))
+        rotation2 = tf.Variable(tf.placeholder(tf.float32))
+        input_data = tf.Variable(tf.placeholder(tf.float32))
         product_rotation = tf.tensordot(tf.transpose(rotation1), tf.transpose(rotation2), axes=0)
-        data_transformer = tf.tensordot(input_data, product_rotation, axes=[0, 1]) #Double check that this is correct
+        data_transformer = tf.tensordot(input_data, product_rotation, axes=[1, 2]) #Double check that this is correct
         with tf.Session as sess:
             transformed_data = sess.run(data_transformer,
-                                        feed_dict={rotation1: self.rotations[0], rotation2: self.rotations[1], input_data: Xs})
+                                        feed_dict={rotation1: self.rotations[0], rotation2: self.rotations[1],
+                                                   input_data: Xs})
 
         return transformed_data
 
 
 class TuckerDiscriminantAnalysis(ManifoldDiscrimantAnalysis):
-    def QtCheck(self, Qt):
-        if self.store[Qt] is None:
-            self.store[Qt] = self.QtCalculator(Qt)
 
     def Qt_initializer(self, Qt, K1, K2, N, M):
 
         rotation1 = tf.Variable(tf.placeholder(tf.float32))
         rotation2 = tf.Variable(tf.placeholder(tf.float32))
         if Qt in {'QtRw', 'QtRb'}:
-            Qt_mm = tf.tensordot(tf.tensordot(self.Qt[-2:], tf.linalg.transpose(rotation1), axes=(1, 0)), tf.linalg.transpose(rotation2), axes = (2, 0)) #Something might be horribly wrong here...
-            Qt_temp = tf.reshape(tf.roll(Qt_mm, (1, 0, 2))(K2*K1, N)) #Not sure if this is the correct approach. Need MATLAB license to test original behavior
+            # Something might be horribly wrong here...
+            if Qt == 'QtRw':
+                dims = N
+            else:
+                dims = M
+            Qt_mm = tf.tensordot(tf.tensordot(Qt[-2:], tf.linalg.transpose(rotation1), axes=(1, 0)),
+                                 tf.linalg.transpose(rotation2), axes=(2, 0))
+            # Not sure if this is the correct approach. Need MATLAB license to test original behavior
+            Qt_temp=tf.reshape(tf.roll(Qt_mm, (1, 0, 2))(K2*K1, dims))
         if Qt in {'QtWQ', 'QtBQ'}:
-            Qt_temp = tf.matmul('QtR'+Qt[2].lower(), self.store['QtR'+Qt[2].lower()]) # #This is not the best way to do this.. But it's not the worst?
+            # #This is not the best way to do this.. But it's not the worst?
+            Qt_temp=tf.matmul('QtR'+Qt[2].lower(), self.store['QtR'+Qt[2].lower()])
         if Qt in {'QtWQinvQtBQ'}:
-            Qt_temp = tf.matmul(self.store['QtBQ'], tf.linalg.inv(self.store['QtWQ']))
+            Qt_temp=tf.matmul(self.store['QtBQ'], tf.linalg.inv(self.store['QtWQ']))
         else:
             print("Wrong Qt specified")
-        self.store[Qt] = Qt_temp
 
+        self.store[Qt]=Qt_temp
 
     def object_matrix_data(self, classmeandiffs, observationdiffs, nis, K2, K1):
         if self.store['Rw'] is None or self.store['Rb'] is None:
@@ -160,20 +174,18 @@ class TuckerDiscriminantAnalysis(ManifoldDiscrimantAnalysis):
             J = sizeObs[1]
             if self.store['Rw'] is None: #What if only one of them is missing? Shouldn't we still calculate the missing one? Split the code below into two parts, one for each case. This has been done now, but not in the MATLAB code
                 nclasses = max(np.shape(classmeandiffs)) #This is a straight-copy of the existing MATLAB code, not sure if this is the intended behavior there either...
-                classmeandiffstensor = np.reshape(classmeandiffs, (I, J, nclasses), order = "F")
-                Rb = classmeandiffstensor
+                classmeandiffstensor = np.reshape(classmeandiffs, (I, J, nclasses), order="F")
+                self.store['Rw']= classmeandiffstensor
+
             if self.store['Rb'] is None:
                 nobs = max(np.shape(observationdiffs))
-                observationdiffstensor = np.reshape(observationdiffs, (I, J, nobs), order = "F")
-                Rw = observationdiffstensor
-            self.store['Rw'] = Rw
-            self.store['Rb'] = Rb
-#        Rw = store['Rw'] #This assignment SHOULD be superflous now...
-#        Rw = store['Rb']
-        Rwsize = np.shape(Rw)
-        nobs = Rwsize[-1]
-        datadims = np.shape(Rb)
-        nclasses = len(datadims)
+                observationdiffstensor = np.reshape(observationdiffs, (I, J, nobs), order="F")
+                self.store['Rb'] = observationdiffstensor
+
+        Rwsize = np.shape(self.store['Rw'])
+        #nobs = Rwsize[0]
+        datadims = np.shape(self.store['Rb'])
+        #nclasses = len(datadims)
         N = datadims[0] #This is a point where the two-dimensionality is hardcoded..
         M = datadims[1]
         #We proceed to calculate all relevant matrices for the optimization step.
@@ -181,8 +193,6 @@ class TuckerDiscriminantAnalysis(ManifoldDiscrimantAnalysis):
             self.Qt_initializer(j, K2, K1, N,  M)
 
     def my_cost(self):  # , x, store, classmeandiffs, observationdiffs, nis, K1, K2):
-        # self.object_matrix_data(self, x, store, classmeandiffs, observationdiffs, nis, K1, K2)
-
         self.MyCost = tf.linalg.trace(self.store['QtWQinvQtBQ'])
 
 

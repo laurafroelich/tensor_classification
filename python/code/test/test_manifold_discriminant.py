@@ -9,17 +9,30 @@ import scipy.stats as stats
 """
 
 
-def generate_data(classes, length_of_data_set, shape=None):
-    end_padding = length_of_data_set % classes
-    number_of_copies = length_of_data_set // classes
-    output_classes = number_of_copies * list(range(classes)) + list(range(end_padding))
-    if shape is None:
-        shape = (5, 6)
+def generate_data(classes, observations_per_class, shape=None):
+    """
+    The purpose of this method is to simulate data for testing the manifold discriminant analysis code.
 
+    For each class i we simulate the same number of observations where the data is uniformly distributed around i.
+       The method returns the simulated observations and the class for each observation.
+
+    :param classes: Int, integer specifying number of classes to simulate observations for.
+    :param observations_per_class: Int, integer specifying the number of observations per class.
+    :param shape: List, list specifying the shape of each simulated observation.
+    :return: observations: Tensor containing all simulated observations
+    :return: output_classes: List of classes specifying the class for each simulated observation
+    """
+    if shape is None:
+        shape = [5, 6]
+
+    output_classes = np.zeros(classes*observations_per_class)
     observations = np.multiply.outer(output_classes, np.zeros(shape))
 
     for i in range(classes):
-        observations[i] = output_classes[i] + np.random.uniform(-0.5, 0.5, shape)
+        observations[observations_per_class*i:observations_per_class*(i+1)] \
+            = i + np.random.uniform(-0.5, 0.5, [observations_per_class]+shape)
+
+        output_classes[observations_per_class*i:observations_per_class*(i+1)] = i
 
     return observations, output_classes
 
