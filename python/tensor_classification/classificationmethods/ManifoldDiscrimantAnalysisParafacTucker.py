@@ -172,8 +172,8 @@ class TuckerDiscriminantAnalysis(ManifoldDiscrimantAnalysis):
             sizeObs = np.shape(obsExample)
             I = sizeObs[0]
             J = sizeObs[1]
-            if self.store['Rw'] is None: #What if only one of them is missing? Shouldn't we still calculate the missing one? Split the code below into two parts, one for each case. This has been done now, but not in the MATLAB code
-                nclasses = max(np.shape(classmeandiffs)) #This is a straight-copy of the existing MATLAB code, not sure if this is the intended behavior there either...
+            if self.store['Rw'] is None: #What if only one of them is missing? Shouldn't we still calculate the missing one? Split the tensor_classification below into two parts, one for each case. This has been done now, but not in the MATLAB tensor_classification
+                nclasses = max(np.shape(classmeandiffs)) #This is a straight-copy of the existing MATLAB tensor_classification, not sure if this is the intended behavior there either...
                 classmeandiffstensor = np.reshape(classmeandiffs, (I, J, nclasses), order="F")
                 self.store['Rw']= classmeandiffstensor
 

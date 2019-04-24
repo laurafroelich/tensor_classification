@@ -11,7 +11,7 @@ import scipy.stats as stats
 
 def generate_data(classes, observations_per_class, shape=None):
     """
-    The purpose of this method is to simulate data for testing the manifold discriminant analysis code.
+    The purpose of this method is to simulate data for testing the manifold discriminant analysis tensor_classification.
 
     For each class i we simulate the same number of observations where the data is uniformly distributed around i.
        The method returns the simulated observations and the class for each observation.
