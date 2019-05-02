@@ -5,7 +5,7 @@ python:
 
 install: 
  - pip install -r python/requirements.txt
- - pip install -e .
+ - pip install -e python/setup.py
 
 
 
