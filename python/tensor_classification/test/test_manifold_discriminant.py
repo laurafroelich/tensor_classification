@@ -1,5 +1,5 @@
 import pytest
-from classificationmethods import ManifoldDiscrimantAnalysisParafacTucker as pt
+from tensor_classification.classificationmethods import ManifoldDiscrimantAnalysisParafacTucker as pt
 import numpy as np
 from numpy import random as random
 import scipy.stats as stats
