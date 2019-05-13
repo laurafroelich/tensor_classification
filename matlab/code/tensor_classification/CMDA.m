@@ -53,7 +53,7 @@ if isa(Xs, 'cell')
 end
     
 sizeXs = size(Xs);
-sizeX = sizeXs(1:(end-1));
+sizeX = sizeXs(2:end); % observations assumed to run along first mode
 tol=1e-6;
 nmodes = length(sizeX);
 
@@ -86,7 +86,8 @@ if length(varargin)>=4 && ~isempty(varargin{4})
                 end
             otherwise
                 warning(['CMDA.m: initialisation method not recognised, '...
-                    'initialising with all-one matrices as proposed in li14 (see help for citation)'])
+                    'initialising with all-one matrices as proposed ' ...
+                    'in li14 (see help for citation)'])
                 % initialisation as proposed in li14
                 Us = cell(1, nmodes);
                 for kmode = 1:nmodes
@@ -124,8 +125,8 @@ end
 
 obsexample = classmeandiffs{1};
 sizeobs = size(obsexample);
-I = sizeobs(1);
-J = sizeobs(2);
+I = sizeobs(2);
+J = sizeobs(3);
 nclasses = length(classmeandiffs);
 nobs = length(observationdiffs);
 
@@ -134,8 +135,11 @@ nobs = length(observationdiffs);
 
 classmeandiffstensor = reshape(cell2mat(classmeandiffs), ...
     I, J, nclasses);
-observationdiffstensor = reshape(cell2mat(observationdiffs), ...
-    I, J, nobs);
+
+permute_vector = [length(sizeobs), 2:(length(sizeobs)-1), 1];
+observationdiffstensor = permute(observationdiffs, permute_vector);
+%reshape(cell2mat(observationdiffs), ...
+%    I, J, nobs);
 
 Rw = observationdiffstensor;
 Rb = classmeandiffstensor.*permute(repmat(sqrt(nis), I,1,J), [1 3 2]);
