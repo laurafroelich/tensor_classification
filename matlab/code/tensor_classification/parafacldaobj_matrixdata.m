@@ -42,14 +42,19 @@ if ~storeexists || ~isfield(store, 'Rw') || ~isfield(store, 'Rb')
     if nargin < 7
         obsexample = classmeandiffs{1};
         sizeobs = size(obsexample);
-        I = sizeobs(1);
-        J = sizeobs(2);
+        n_modes = length(sizeobs);
         nclasses = length(classmeandiffs);
         nobs = length(observationdiffs);
+        class_means_reshape_vector = [sizeobs(2:n_modes), nclasses];
+        obs_diffs_reshape_vector = [sizeobs(2:n_modes), nobs];
         classmeandiffstensor = reshape(cell2mat(classmeandiffs), ...
-            I, J, nclasses);
-        observationdiffstensor = reshape(cell2mat(observationdiffs), ...
-            I, J, nobs);
+            class_means_reshape_vector);
+        observationdiffstensor = reshape(observationdiffs, ...
+            obs_diffs_reshape_vector);
+        
+        
+        I = sizeobs(1);
+        J = sizeobs(2);
         
         Rw =observationdiffstensor;
         Rb = classmeandiffstensor.*permute(repmat(sqrt(nis), I,1,J), [1 3 2]);

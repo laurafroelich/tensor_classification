@@ -9,7 +9,6 @@ function [cmean_m_xmeans, xi_m_cmeans, nis] = classbased_differences(Xs, classes
 % cmean_m_xmean: class means minus overall mean
 % xi_m_cmean: observations minus corresponding class mean
 
-nsamples = length(Xs);
 nclasses = length(unique(classes));
 
 if isa(Xs, 'cell')
@@ -40,9 +39,12 @@ for iclass = 1:nclasses
         current_class_mean_obs_differences); 
 end
 
-cmean_m_xmeans = cell(1, nclasses);
+cmean_m_xmeans = cell(nclasses, 1);
 for iclass = 1:nclasses
     cmean_m_xmeans{iclass} = Xmeansclasses{iclass}-Xmean;
 end
+
+cmean_m_xmeans = cell_array_to_nd_array(cmean_m_xmeans);
+cmean_m_xmeans = squeeze(cmean_m_xmeans);
 
 end
