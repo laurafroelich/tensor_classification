@@ -129,18 +129,10 @@ J = sizeobs(3);
 nclasses = sizeobs(1);
 nobs = size(observationdiffs, 1);
 
-% matricise classmeandifss and observationdiffs to use fast matrix
-% multiplication.
-
 %permute_vector = [length(sizeobs), 2:(length(sizeobs)-1), 1];
 permute_vector = [2:(length(sizeobs)), 1];
 classmeandiffstensor = permute(classmeandiffs, permute_vector);
-%reshape(cell2mat(classmeandiffs), ...
-%    I, J, nclasses);
-
 observationdiffstensor = permute(observationdiffs, permute_vector);
-%reshape(cell2mat(observationdiffs), ...
-%    I, J, nobs);
 
 Rw = observationdiffstensor;
 classwise_n_obs_sqrts = repmat(sqrt(nis), I,1,J);

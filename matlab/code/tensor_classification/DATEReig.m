@@ -118,22 +118,23 @@ end
 % j'th observation from class c (stored in observationdiffs) and the number
 % of observations from each class (stored in nis).
 [classmeandiffs, observationdiffs, nis] = classbased_differences(Xs, classes);
-obsexample = classmeandiffs{1};
-sizeobs = size(obsexample);
-I = sizeobs(1);
-J = sizeobs(2);
-nclasses = length(classmeandiffs);
-nobs = length(observationdiffs);
 
-% matricise classmeandifss and observationdiffs to use fast matrix
-% multiplication.
-classmeandiffstensor = reshape(cell2mat(classmeandiffs), ...
-    I, J, nclasses);
-observationdiffstensor = reshape(cell2mat(observationdiffs), ...
-    I, J, nobs);
+sizeobs = size(classmeandiffs);
+I = sizeobs(2);
+J = sizeobs(3);
+nclasses = sizeobs(1);
+nobs = size(observationdiffs, 1);
 
-Rw =observationdiffstensor;
-Rb = classmeandiffstensor.*permute(repmat(sqrt(nis), I,1,J), [1 3 2]);
+
+permute_vector = [2:(length(sizeobs)), 1];
+classmeandiffstensor = permute(classmeandiffs, permute_vector);
+observationdiffstensor = permute(observationdiffs, permute_vector);
+
+
+Rw = observationdiffstensor;
+classwise_n_obs_sqrts = repmat(sqrt(nis), I,1,J);
+permuted_classwise_n_obs_sqrts = permute(classwise_n_obs_sqrts, [1 3 2]);
+Rb = classmeandiffstensor.*permuted_classwise_n_obs_sqrts;
 % multiply all entries in classmeandiffstensor by the square root of the
 % size of their class. When Rb is multiplied by its own transpose, the
 % class sizes are automatically accounted for in the resulting sum.
