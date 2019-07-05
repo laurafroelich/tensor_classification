@@ -17,19 +17,20 @@ function [Us, objfuncval, Ys] = HODA(Xs, classes, varargin)
 % page 15 in
 % http://www.bsp.brain.riken.jp/publications/2010/IEICE_NOLTA_Phan-Cichocki-corr.pdf
 
-Xsample1 = Xs{1};
-sizeX = size(Xsample1);
+if isa(Xs, 'cell')
+    Xs = cell_array_to_nd_array(Xs);
+end
+    
+sizeXs = size(Xs);
+sizeX = sizeXs(2:end); % observations assumed to run along first mode
 nmodes = length(sizeX);
-nsamples = length(Xs);
-nclasses = length(unique(classes));
+
 
 if length(sizeX) > 2
     error(['HODA.m: Input data has more than two dimensions. '...
         'This function is only customised for two-dimensional (i.e. matrix) data.'])
 end
 
-I = sizeX(1);
-J = sizeX(2);
 
 if isempty(varargin) || isempty(varargin{1})
     lowerdims = sizeX;
@@ -53,14 +54,16 @@ end
 [classmeandiffs, observationdiffs, nis] = classbased_differences(Xs, classes);
 
 
-% matricise classmeandifss and observationdiffs to use fast matrix
-% multiplication.
-classmeandiffstensor = reshape(cell2mat(classmeandiffs), ...
-    I, J, nclasses);
-observationdiffstensor = reshape(cell2mat(observationdiffs), ...
-    I, J, nsamples);
-Xs = reshape(cell2mat(Xs), ...
-    I, J, nsamples);
+sizeobs = size(classmeandiffs);
+I = sizeobs(2);
+J = sizeobs(3);
+nclasses = sizeobs(1);
+nsamples = size(observationdiffs, 1);
+
+permute_vector = [2:(length(sizeobs)), 1];
+classmeandiffstensor = permute(classmeandiffs, permute_vector);
+observationdiffstensor = permute(observationdiffs, permute_vector);
+Xs = permute(Xs, permute_vector);
 
 Rw = observationdiffstensor;
 Rb = classmeandiffstensor.*permute(repmat(sqrt(nis), I,1,J), [1 3 2]);
