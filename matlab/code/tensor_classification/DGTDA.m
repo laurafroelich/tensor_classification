@@ -47,13 +47,23 @@ end
 % j'th observation from class c (stored in observationdiffs) and the number
 % of observations from each class (stored in nis).
 [classmeandiffs, observationdiffs, nis] = classbased_differences(Xs, classes);
+sizeobs = size(classmeandiffs);
+permute_vector = [2:(length(sizeobs)), 1];
+classmeandiffstensor = permute(classmeandiffs, permute_vector);
+observationdiffstensor = permute(observationdiffs, permute_vector);
 
+all_modes = 1:nmodes;
+nclasses = sizeobs(1);
 Bs = cell(nmodes, 1);
 for nmode = 1:nmodes
-    diffmatricised = matricizing(classmeandiffs{1}, nmode);
+    mode_permute_vector = [nmode, setdiff(all_modes, nmode)];
+    diffmatricised = permute(...
+        classmeandiffstensor(:, :, 1), mode_permute_vector);
     Bs{nmode} = nis(1)*(diffmatricised*diffmatricised');
-    for iclass=1:nclasses
-        diffmatricised = matricizing(classmeandiffs{iclass}, nmode);
+    
+    for iclass=2:nclasses
+        diffmatricised = permute(...
+        classmeandiffstensor(:, :, iclass), mode_permute_vector); 
         Bs{nmode} = Bs{nmode} + nis(iclass)*(diffmatricised*diffmatricised');
     end
 end
@@ -61,9 +71,11 @@ end
 
 Ws = cell(nmodes, 1);
 for nmode = 1:nmodes
+    mode_permute_vector = [nmode, setdiff(all_modes, nmode)];
     Ws{nmode} = zeros(size(Bs{nmode}));
     for isample=1:nsamples
-        diffmatricised = matricizing(observationdiffs{isample}, nmode);
+        diffmatricised = permute(...
+            observationdiffstensor(:, :, isample), mode_permute_vector);
         Ws{nmode} = Ws{nmode} + (diffmatricised*diffmatricised');
     end
 end
