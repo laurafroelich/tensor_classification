@@ -8,15 +8,21 @@ end
 
 nits=100;
 
-ntrials = length(x_train);
-[n_rows, n_cols] = size(x_train{1});
-Xsmat_train = reshape(...
-    cell2mat(x_train), [n_rows, n_cols, ntrials]);
+if isa(x_train, 'cell')
+    Xsmat_train = cell_array_to_nd_array(x_train);
+else
+    Xsmat_train = x_train;
+end
+permute_vector = [2, 3, 1];
+Xsmat_train = permute(Xsmat_train, permute_vector);
 
-ntrials = length(x_test);
-Xsmat_test = reshape(...
-    cell2mat(x_test), n_rows, n_cols, ntrials);
+if isa(x_test, 'cell')
+    Xsmat_test = cell_array_to_nd_array(x_test);
+else
+    Xsmat_test = x_train;
+end
 
+Xsmat_test = permute(Xsmat_test, permute_vector);
 results = cell(nrandinits, 1);
 objfuncvals = NaN(1, nrandinits);
 opts.maxeval = nits;
