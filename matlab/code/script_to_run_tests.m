@@ -20,10 +20,13 @@ suite_dgtda = matlab.unittest.TestSuite.fromName(...
 suite_bilinear_tucker = matlab.unittest.TestSuite.fromName(...
 'test_classification/test_bilinear_tucker_discrimination');
 
+suite_bilinear_parafac = matlab.unittest.TestSuite.fromName(...
+'test_classification/test_bilinear_parafac_discrimination');
+
 runner = TestRunner.withTextOutput;
 %runner.addPlugin(StopOnFailuresPlugin)
 
 %result = runner.run([suite_datereig, suite_cmda, suite_hoda, ...
-%    suite_dater, suite_dgtda, suite_bilinear_tucker])
+%    suite_dater, suite_dgtda, suite_bilinear_tucker, suite_bilinear_parafac])
 
-result = runner.run(suite_bilinear_tucker)
+result = runner.run(suite_bilinear_parafac)
