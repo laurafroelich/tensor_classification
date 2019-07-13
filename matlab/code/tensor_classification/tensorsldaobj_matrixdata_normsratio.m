@@ -30,22 +30,22 @@ else
     storeexists = true;
 end
 
-obsexample = classmeandiffs{1};
-I = size(obsexample, 1);
-J = size(obsexample, 2);
-%U1 = U(1:I, 1:K1);
-%U2 = U((I+1):end, (K1+1):end);
+obsexample = classmeandiffs(1,:,:);
+sizeobs = size(obsexample);
+
+I = sizeobs(2);
+J = sizeobs(3);
 U1 = U.U1;
 U2 = U.U2;
 U2t = U2';
 U1t = U1';
 if nargin <=6
-    nclasses = length(classmeandiffs);
-    nobs = length(observationdiffs);
-    classmeandiffstensor = reshape(cell2mat(classmeandiffs), ...
-        I, J, nclasses);
-    observationdiffstensor = reshape(cell2mat(observationdiffs), ...
-        I, J, nobs);
+    
+    
+    permute_vector = [2:(length(sizeobs)), 1];
+    classmeandiffstensor = permute(classmeandiffs, permute_vector);
+    observationdiffstensor = permute(observationdiffs, permute_vector);
+    
 end
 
 if ~storeexists || ~isfield(store, 'Ap1')
@@ -150,9 +150,7 @@ G1 = -(trUtBU*2*S1-trUtAU*2*T1)/trUtBU^2;
 G2 = -(trUtBU*2*S2-trUtAU*2*T2)/trUtBU^2;
 G.U1 = G1;
 G.U2 = G2;
-%G = zeros(I+J, K1+K2);
-%G(1:I, 1:K1) = G1;
-%G((I+1):end, (K1+1):end) = G2;
+
 F = -trUtAU/trUtBU;
 
 end
