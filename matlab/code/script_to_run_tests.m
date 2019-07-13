@@ -26,11 +26,14 @@ suite_bilinear_parafac = matlab.unittest.TestSuite.fromName(...
 suite_lda_parafac = matlab.unittest.TestSuite.fromName(...
 'test_classification/test_parafac_lda_discrimination');
 
+suite_lda_parafac_nr = matlab.unittest.TestSuite.fromName(...
+'test_classification/test_parafac_norms_ratio_discrimination');
+
 runner = TestRunner.withTextOutput;
 %runner.addPlugin(StopOnFailuresPlugin)
 
 %result = runner.run([suite_datereig, suite_cmda, suite_hoda, ...
 %    suite_dater, suite_dgtda, suite_bilinear_tucker, ...
-%suite_bilinear_parafac, suite_lda_parafac])
+%suite_bilinear_parafac, suite_lda_parafac, suite_lda_parafac_nr])
 
-result = runner.run(suite_lda_parafac)
+result = runner.run(suite_lda_parafac_nr)
