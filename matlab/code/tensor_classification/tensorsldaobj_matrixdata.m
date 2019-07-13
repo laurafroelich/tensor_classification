@@ -35,16 +35,15 @@ end
 if ~storeexists || ~isfield(store, 'Rw') || ~isfield(store, 'Rb')
     
     if nargin < 7
-        obsexample = classmeandiffs{1};
+        obsexample = classmeandiffs(1,:,:);
         sizeobs = size(obsexample);
-        I = sizeobs(1);
-        J = sizeobs(2);
-        nclasses = length(classmeandiffs);
-        nobs = length(observationdiffs);
-        classmeandiffstensor = reshape(cell2mat(classmeandiffs), ...
-            I, J, nclasses);
-        observationdiffstensor = reshape(cell2mat(observationdiffs), ...
-            I, J, nobs);
+
+        permute_vector = [2:(length(sizeobs)), 1];
+        classmeandiffstensor = permute(classmeandiffs, permute_vector);
+        observationdiffstensor = permute(observationdiffs, permute_vector);
+
+        I = sizeobs(2);
+        J = sizeobs(3);
         
         Rw =observationdiffstensor;
         Rb = classmeandiffstensor.*permute(repmat(sqrt(nis), I,1,J), [1 3 2]);
