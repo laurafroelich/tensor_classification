@@ -52,10 +52,8 @@ if isa(Xs, 'cell')
     Xs = cell_array_to_nd_array(Xs);
 end
     
-sizeXs = size(Xs);
-sizeX = sizeXs(2:end); % observations assumed to run along first mode
+[nobs, sizeX, nmodes] = get_sizes(Xs, 1); % observations assumed to run along first mode
 tol=1e-6;
-nmodes = length(sizeX);
 
 if length(varargin) >= 1 && ~isempty(varargin{1})
     Tmax = varargin{1};
@@ -123,20 +121,20 @@ end
 % of observations from each class (stored in nis).
 [classmeandiffs, observationdiffs, nis] = classbased_differences(Xs, classes);
 
-sizeobs = size(classmeandiffs);
-I = sizeobs(2);
-J = sizeobs(3);
-nclasses = sizeobs(1);
-nobs = size(observationdiffs, 1);
+[nclasses, sizeobs, nmodes] = get_sizes(classmeandiffs, 1); % observations assumed to run along first mode
 
 %permute_vector = [length(sizeobs), 2:(length(sizeobs)-1), 1];
-permute_vector = [2:(length(sizeobs)), 1];
+permute_vector = [2:(nmodes+1), 1];
 classmeandiffstensor = permute(classmeandiffs, permute_vector);
 observationdiffstensor = permute(observationdiffs, permute_vector);
 
 Rw = observationdiffstensor;
-classwise_n_obs_sqrts = repmat(sqrt(nis), I,1,J);
-permuted_classwise_n_obs_sqrts = permute(classwise_n_obs_sqrts, [1 3 2]);
+%classwise_n_obs_sqrts = repmat(sqrt(nis), I,1,J);
+classwise_n_obs_sqrts = repmat(sqrt(nis), [sizeobs(1), 1, sizeobs(2:end)]);
+%permuted_classwise_n_obs_sqrts = permute(classwise_n_obs_sqrts, [1 3 2]);
+permuted_classwise_n_obs_sqrts = permute(classwise_n_obs_sqrts, ...
+    [1 3:(nmodes+1) 2]);
+
 Rb = classmeandiffstensor.*permuted_classwise_n_obs_sqrts;
 % multiply all entries in classmeandiffstensor by the square root of the
 % size of their class. When Rb is multiplied by its own transpose, the
@@ -149,18 +147,31 @@ while ~stop && iit < Tmax
     iit = iit+1;
     oldUs = Us;
     for kmode = 1:nmodes
-        othermode = setdiff(1:2, kmode);
         innerits = innerits +1;
         
+        permute_vector = 1:(nmodes+1);
+        permute_vector(1) = kmode;
+        permute_vector(kmode) = 1;
         
-        QtRb_mm=tmult(Rb,Us{othermode}', othermode);
-        QtRb=reshape(permute(QtRb_mm, [kmode, othermode, 3]),[sizeX(kmode),...
-            lowerdims(othermode)*nclasses]);
+        othermodes = setdiff(1:nmodes, kmode);
+        
+        QtRb_mm = Rb;
+        for othermode = othermodes
+        QtRb_mm=tmult(QtRb_mm,Us{othermode}', othermode);
+        end
+        
+        QtRb=reshape(permute(QtRb_mm, permute_vector),[sizeX(kmode),...
+            prod(lowerdims(othermodes))*nclasses]);
+        %QtRb=reshape(permute(QtRb_mm, [kmode, othermode, 3]),[sizeX(kmode),...
+        %    lowerdims(othermode)*nclasses]);
         B = QtRb*QtRb';
         
-        QtRw_mm=tmult(Rw,Us{othermode}',othermode);
-        QtRw=reshape(permute(QtRw_mm, [kmode, othermode, 3]),[sizeX(kmode),...
-            lowerdims(othermode)*nobs]);
+        QtRw_mm = Rw;
+        for othermode = othermodes
+        QtRw_mm=tmult(QtRw_mm,Us{othermode}',othermode);
+        end
+        QtRw=reshape(permute(QtRw_mm, permute_vector),[sizeX(kmode),...
+            prod(lowerdims(othermodes))*nobs]);
         W = QtRw*QtRw';
         
         
