@@ -121,21 +121,14 @@ end
 % of observations from each class (stored in nis).
 [classmeandiffs, observationdiffs, nis] = classbased_differences(Xs, classes);
 
-[nclasses, sizeobs, nmodes] = get_sizes(classmeandiffs, 1); % observations assumed to run along first mode
+[nclasses, ~, nmodes] = get_sizes(classmeandiffs, 1); % observations assumed to run along first mode
 
-%permute_vector = [length(sizeobs), 2:(length(sizeobs)-1), 1];
-permute_vector = [2:(nmodes+1), 1];
+permute_vector = [2:(nmodes+1), 1]; % move observations to run along last mode
 classmeandiffstensor = permute(classmeandiffs, permute_vector);
 observationdiffstensor = permute(observationdiffs, permute_vector);
 
 Rw = observationdiffstensor;
-%classwise_n_obs_sqrts = repmat(sqrt(nis), I,1,J);
-classwise_n_obs_sqrts = repmat(sqrt(nis), [sizeobs(1), 1, sizeobs(2:end)]);
-%permuted_classwise_n_obs_sqrts = permute(classwise_n_obs_sqrts, [1 3 2]);
-permuted_classwise_n_obs_sqrts = permute(classwise_n_obs_sqrts, ...
-    [1 3:(nmodes+1) 2]);
-
-Rb = classmeandiffstensor.*permuted_classwise_n_obs_sqrts;
+Rb = classwise_scalar_multiply(classmeandiffstensor, sqrt(nis));
 % multiply all entries in classmeandiffstensor by the square root of the
 % size of their class. When Rb is multiplied by its own transpose, the
 % class sizes are automatically accounted for in the resulting sum.
