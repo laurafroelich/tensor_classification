@@ -142,36 +142,18 @@ while ~stop && iit < Tmax
     for kmode = 1:nmodes
         innerits = innerits +1;
         
-        permute_vector = 1:(nmodes+1);
-        permute_vector(1) = kmode;
-        permute_vector(kmode) = 1;
+        between_class_scatter = get_mode_specific_scatter_matrix(Rb, kmode, lowerdims, Us, ...
+            nclasses, nmodes, sizeX);
         
-        othermodes = setdiff(1:nmodes, kmode);
-        
-        QtRb_mm = Rb;
-        for othermode = othermodes
-        QtRb_mm=tmult(QtRb_mm,Us{othermode}', othermode);
-        end
-        
-        QtRb=reshape(permute(QtRb_mm, permute_vector),[sizeX(kmode),...
-            prod(lowerdims(othermodes))*nclasses]);
-        B = QtRb*QtRb';
-        
-        QtRw_mm = Rw;
-        for othermode = othermodes
-        QtRw_mm=tmult(QtRw_mm,Us{othermode}',othermode);
-        end
-        QtRw=reshape(permute(QtRw_mm, permute_vector),[sizeX(kmode),...
-            prod(lowerdims(othermodes))*nobs]);
-        W = QtRw*QtRw';
-        
-        
-        [U, ~] = svd(W\B, 0);
+        within_class_scatter = get_mode_specific_scatter_matrix(Rw, kmode, lowerdims, Us, ...
+            nobs, nmodes, sizeX);
+          
+        [U, ~] = svd(within_class_scatter\between_class_scatter, 0);
         Us{kmode} = U(:, 1:lowerdims(kmode));
         
         if nargout >=4
-            Btemp = Us{kmode}'*B*Us{kmode};
-            Wtemp = Us{kmode}'*W*Us{kmode};
+            Btemp = Us{kmode}'*between_class_scatter*Us{kmode};
+            Wtemp = Us{kmode}'*within_class_scatter*Us{kmode};
             objfuncvals(innerits) = -trace(Btemp)/trace(Wtemp);
         end
         if nargout >=5

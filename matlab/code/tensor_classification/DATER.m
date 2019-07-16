@@ -127,38 +127,17 @@ Rb = classwise_scalar_multiply(classmeandiffstensor, sqrt(nis));
 
 innerits = 0;
 for iit = 1:Tmax
-    
     oldUs = Us;
     for kmode = 1:nmodes
-        
-        permute_vector = 1:(nmodes+1);
-        permute_vector(1) = kmode;
-        permute_vector(kmode) = 1;
-        
-        othermodes = setdiff(1:nmodes, kmode);
-        
-        QtRb_mm = Rb;
-        for othermode = othermodes
-        QtRb_mm=tmult(QtRb_mm,Us{othermode}', othermode);
-        end
-        
         innerits = innerits +1;
         
-        %QtRb_mm=tmult(Rb,Us{othermode}', othermode);
-        QtRb=reshape(permute(QtRb_mm, permute_vector),[sizeX(kmode),...
-            prod(lowerdims(othermodes))*nclasses]);
-        B = QtRb*QtRb';
+        between_class_scatter = get_mode_specific_scatter_matrix(Rb, kmode, lowerdims, Us, ...
+            nclasses, nmodes, sizeX);
         
-        QtRw_mm = Rw;
-        for othermode = othermodes
-        QtRw_mm=tmult(QtRw_mm,Us{othermode}',othermode);
-        end
-        QtRw=reshape(permute(QtRw_mm, permute_vector),[sizeX(kmode),...
-            prod(lowerdims(othermodes))*nobs]);
-        W = QtRw*QtRw';
+        within_class_scatter = get_mode_specific_scatter_matrix(Rw, kmode, lowerdims, Us, ...
+            nobs, nmodes, sizeX);
         
-        
-        [U, eigvals] = eig(B, W);
+        [U, eigvals] = eig(between_class_scatter, within_class_scatter);
         
         eigvals = diag(eigvals);
         [~, sortedinds] = sort(eigvals, 'descend');
@@ -166,8 +145,8 @@ for iit = 1:Tmax
         Us{kmode} = U(:, sortedinds(1:lowerdims(kmode)));
         
         if nargout >=4
-            Btemp = Us{kmode}'*B*Us{kmode};
-            Wtemp = Us{kmode}'*W*Us{kmode};
+            Btemp = Us{kmode}'*between_class_scatter*Us{kmode};
+            Wtemp = Us{kmode}'*within_class_scatter*Us{kmode};
             objfuncvals(innerits) = -trace(Btemp)/trace(Wtemp);
         end
         if nargout >=5
