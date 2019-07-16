@@ -20,10 +20,10 @@ suite_dgtda = matlab.unittest.TestSuite.fromName(...
 [test_file_name '/test_dgtda_discrimination']);
 
 suite_bilinear_tucker = matlab.unittest.TestSuite.fromName(...
-[test_file_name '/test_bilinear_tucker_discrimination']);
+'test_classification/test_bilinear_tucker_discrimination');
 
 suite_bilinear_parafac = matlab.unittest.TestSuite.fromName(...
-[test_file_name '/test_bilinear_parafac_discrimination']);
+'test_classification/test_bilinear_parafac_discrimination');
 
 suite_lda_parafac = matlab.unittest.TestSuite.fromName(...
 [test_file_name '/test_parafac_lda_discrimination']);
@@ -46,7 +46,7 @@ runner = TestRunner.withTextOutput;
 %suite_bilinear_parafac, suite_lda_parafac, suite_lda_parafac_nr, ...
 %suite_lda_tucker, suite_lda_tucker_nr])
 
-result = runner.run([suite_cmda, suite_dater])
+result = runner.run([suite_cmda, suite_dater, suite_bilinear_parafac, suite_bilinear_tucker])
 
 %result = runner.run(matlab.unittest.TestSuite.fromFile(...
 %[test_file_name '.m']))
