@@ -155,8 +155,6 @@ while ~stop && iit < Tmax
         
         QtRb=reshape(permute(QtRb_mm, permute_vector),[sizeX(kmode),...
             prod(lowerdims(othermodes))*nclasses]);
-        %QtRb=reshape(permute(QtRb_mm, [kmode, othermode, 3]),[sizeX(kmode),...
-        %    lowerdims(othermode)*nclasses]);
         B = QtRb*QtRb';
         
         QtRw_mm = Rw;
