@@ -13,15 +13,12 @@ function test_cmda_discrimination(testCase)
     [Xs, ys] = get_simple_data();
     nmodes = length(size(Xs{1}));
     
-    lowerdims = repmat(2, 1, nmodes);
+    lowerdims = repmat(k, 1, nmodes);
     
-    CMDA(Xs, ys, [], lowerdims)
-
-    
-    %project_matrices_verify_predictions(testCase, ...
-    %@(Xs, ys) CMDA(Xs, ys, [], [k, k]), ...
-    %@(Xs, Xs_test, ys, ys_test, k, Us) ...
-    %project_and_predict(Xs, Xs_test, ys, ys_test, k, Us, parafac_structure))
+    project_matrices_verify_predictions(testCase, ...
+    @(Xs, ys) CMDA(Xs, ys, [], lowerdims), ...
+    @(Xs, Xs_test, ys, ys_test, k, Us) ...
+    project_and_predict(Xs, Xs_test, ys, ys_test, k, Us, parafac_structure))
 end
 
 
@@ -147,8 +144,14 @@ function test_dater_discrimination(testCase)
     parafac_structure = false;
     k = 2;
     
+    
+    [Xs, ys] = get_simple_data();
+    nmodes = length(size(Xs{1}));
+    
+    lowerdims = repmat(k, 1, nmodes);
+    
     project_matrices_verify_predictions(testCase, ...
-    @(Xs, ys) DATER(Xs, ys, [], [k, k]), ...
+    @(Xs, ys) DATER(Xs, ys, [], lowerdims), ...
     @(Xs, Xs_test, ys, ys_test, k, Us) ...
     project_and_predict(Xs, Xs_test, ys, ys_test, k, Us, parafac_structure))
 end
