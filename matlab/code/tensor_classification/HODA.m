@@ -23,20 +23,8 @@ end
     
 [nobs, sizeX, nmodes] = get_sizes(Xs, 1); % observations assumed to run along first mode
 
-if isempty(varargin) || isempty(varargin{1})
-    lowerdims = sizeX;
-else
-    lowerdims = varargin{1};
-end
-
-if isempty(lowerdims)
-    lowerdims = sizeX;
-end
-
-Us = cell(1, nmodes);
-for kmode = 1:nmodes
-    Us{kmode} = orth(randn(sizeX(kmode), lowerdims(kmode)));
-end
+[~, lowerdims, ~, Us] = parse_varargin(sizeX, nmodes, [], varargin{1}, ...
+    [], 'orth');
 
 % calculate Xc - X for each class, where Xc is the class mean and X is the
 % overall mean (stored in classmeandiffs) and Xcj - Xc where Xcj is the
