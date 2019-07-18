@@ -39,6 +39,11 @@ if length(varargin)>=4 && ~isempty(varargin{4})
                 for kmode = 1:nmodes
                     Us{kmode} = eye(sizeX(kmode), lowerdims(kmode));
                 end
+            case 'orth'
+                Us = cell(1, nmodes);
+                for kmode = 1:nmodes
+                    Us{kmode} = orth(randn(sizeX(kmode), lowerdims(kmode)));
+                end
             otherwise
                 warning('Initialisation method not recognised.')
         end
