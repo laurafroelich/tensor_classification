@@ -128,9 +128,13 @@ function test_dgtda_discrimination(testCase)
     
     parafac_structure = false;
     k = 2;
+    [Xs, ys] = get_simple_data();
+    nmodes = length(size(Xs{1}));
+    
+    lowerdims = repmat(k, 1, nmodes);
     
     project_matrices_verify_predictions(testCase, ...
-    @(Xs, ys) DGTDA(Xs, ys, [k, k]), ...
+    @(Xs, ys) DGTDA(Xs, ys, lowerdims), ...
     @(Xs, Xs_test, ys, ys_test, k, Us) ...
     project_and_predict(Xs, Xs_test, ys, ys_test, k, Us, parafac_structure))
 end
@@ -143,8 +147,6 @@ function test_dater_discrimination(testCase)
     
     parafac_structure = false;
     k = 2;
-    
-    
     [Xs, ys] = get_simple_data();
     nmodes = length(size(Xs{1}));
     
@@ -164,9 +166,12 @@ function test_datereig_discrimination(testCase)
     
     parafac_structure = false;
     k = 2;
+    [Xs, ys] = get_simple_data();
+    nmodes = length(size(Xs{1}));
+    lowerdims = repmat(k, 1, nmodes);
     
     project_matrices_verify_predictions(testCase, ...
-    @(Xs, ys) DATEReig(Xs, ys, [], [k, k]), ...
+    @(Xs, ys) DATEReig(Xs, ys, [], lowerdims), ...
     @(Xs, Xs_test, ys, ys_test, k, Us) ...
     project_and_predict(Xs, Xs_test, ys, ys_test, k, Us, parafac_structure))
 end

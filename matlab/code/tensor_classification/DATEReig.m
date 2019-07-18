@@ -45,62 +45,31 @@ function [Us, iit, errs, objfuncvals, objfuncvals_traceratio, Ys] = DATEReig(Xs,
 %   IEEE Int. Conf. on Computer Vision and Pattern Recognition, 2005
 
 %% read input and set parameters
-Xsample1 = Xs{1};
-sizeX = size(Xsample1);
-nmodes = 2;
-nsamples = length(Xs);
+if isa(Xs, 'cell')
+    Xs = cell_array_to_nd_array(Xs);
+end
+    
+[nobs, sizeX, nmodes] = get_sizes(Xs, 1); % observations assumed to run along first mode
+
 tol=1e-6;
-
-
-if length(sizeX) > 2
-    error(['DATER.m: Input data has more than two dimensions. '...
-        'This function is only customised for two-dimensional (i.e. matrix) data.'])
-end
-
-if length(varargin) >= 1 && ~isempty(varargin{1})
-    Tmax = varargin{1};
-else
-    Tmax = 100;
-end
-
-if length(varargin)>=2 && ~isempty(varargin{2})
-    lowerdims = varargin{2};
-else
-    lowerdims = sizeX;
-end
-
-if length(varargin)>=3 && ~isempty(varargin{3})
-    usestoppingcrit = varargin{3};
-else
-    usestoppingcrit = true;
-end
 
 if length(varargin)>=4 && ~isempty(varargin{4})
     Us = varargin{4};
     if ischar(Us)
-        switch Us
-            case 'randinit'
-                Us = cell(1, nmodes);
-                for kmode = 1:nmodes
-                    Us{kmode} = orth(randn(sizeX(kmode), lowerdims(kmode)));
-                end
-            otherwise
-                warning(['DATER.m: initialisation method not recognised, '...
+        if ~(strcmp(Us, 'randinit') || strcmp(Us, 'ones') || ...
+                strcmp(Us, 'identity'))
+                warning(['DATEReig.m: initialisation method not recognised, '...
                     'initialising with identity matrices as proposed in yan05 (see help for citation)'])
                 % initialisation as proposed in yan05
-                Us = cell(1, nmodes);
-                for kmode = 1:nmodes
-                    Us{kmode} = eye(sizeX(kmode), lowerdims(kmode));
-                end
+                varargin{4} = 'identity';
         end
     end
 else
-    % initialisation as proposed in yan05
-    Us = cell(1, nmodes);
-    for kmode = 1:nmodes
-        Us{kmode} = eye(sizeX(kmode), lowerdims(kmode));
-    end
+    varargin{4} = 'identity';
 end
+
+[Tmax, lowerdims, usestoppingcrit, Us] = parse_varargin(sizeX, nmodes, varargin{:});
+
 
 %% run DATEReig vis05
 errs = NaN(Tmax, 1);
@@ -119,22 +88,14 @@ end
 % of observations from each class (stored in nis).
 [classmeandiffs, observationdiffs, nis] = classbased_differences(Xs, classes);
 
-sizeobs = size(classmeandiffs);
-I = sizeobs(2);
-J = sizeobs(3);
-nclasses = sizeobs(1);
-nobs = size(observationdiffs, 1);
+[nclasses, ~, nmodes] = get_sizes(classmeandiffs, 1); % observations assumed to run along first mode
 
-
-permute_vector = [2:(length(sizeobs)), 1];
+permute_vector = [2:(nmodes+1), 1]; % move observations to run along last mode
 classmeandiffstensor = permute(classmeandiffs, permute_vector);
 observationdiffstensor = permute(observationdiffs, permute_vector);
 
-
 Rw = observationdiffstensor;
-classwise_n_obs_sqrts = repmat(sqrt(nis), I,1,J);
-permuted_classwise_n_obs_sqrts = permute(classwise_n_obs_sqrts, [1 3 2]);
-Rb = classmeandiffstensor.*permuted_classwise_n_obs_sqrts;
+Rb = classwise_scalar_multiply(classmeandiffstensor, sqrt(nis));
 % multiply all entries in classmeandiffstensor by the square root of the
 % size of their class. When Rb is multiplied by its own transpose, the
 % class sizes are automatically accounted for in the resulting sum.
@@ -144,21 +105,14 @@ for iit = 1:Tmax
     
     oldUs = Us;
     for kmode = 1:nmodes
-        othermode = setdiff(1:2, kmode);
         innerits = innerits +1;
+        between_class_scatter = get_mode_specific_scatter_matrix(Rb, kmode, lowerdims, Us, ...
+            nclasses, nmodes, sizeX);
         
-        QtRb_mm=tmult(Rb,Us{othermode}', othermode);
-        QtRb=reshape(permute(QtRb_mm, [kmode, othermode, 3]),[sizeX(kmode),...
-            lowerdims(othermode)*nclasses]);
-        B = QtRb*QtRb';
-        
-        QtRw_mm=tmult(Rw,Us{othermode}',othermode);
-        QtRw=reshape(permute(QtRw_mm, [kmode, othermode, 3]),[sizeX(kmode),...
-            lowerdims(othermode)*nobs]);
-        W = QtRw*QtRw';
-        
-        
-        [U, eigvals] = eig(W\B);
+        within_class_scatter = get_mode_specific_scatter_matrix(Rw, kmode, lowerdims, Us, ...
+            nobs, nmodes, sizeX);
+         
+        [U, eigvals] = eig(within_class_scatter\between_class_scatter);
         
         eigvals = diag(eigvals);
         [~, sortedinds] = sort(eigvals, 'descend');
