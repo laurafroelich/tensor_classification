@@ -54,13 +54,12 @@ Rw = store.Rw;
 Rb = store.Rb;
 
 Rwsize = size(Rw);
-
 nobs = Rwsize(end);
-datadims = size(Rb);
-nclasses = datadims(length(datadims));
+Rbsize = size(Rb);
+nclasses = Rbsize(end);
 
-N=datadims(1);
-M=datadims(2);
+N=Rbsize(1);
+M=Rbsize(2);
 U1 = U.U1;
 U2 = U.U2;
 
@@ -94,19 +93,12 @@ if ~isfield(store, 'QtWQ')
 else
     QtWQ = store.QtWQ;
 end
+
 if ~isfield(store, 'QtBQ')
     QtBQ = diag(diag(QtRb*QtRb'));
     store.QtBQ = QtBQ;
 else
     QtBQ = store.QtBQ;
-end
-
-if false % alternative, less efficient way to calculate QtWQ
-    QtRw_mmalt=zeros(K, nobs);
-    for curcomp = 1:K
-       QtRw_mmalt(curcomp, :) = squeeze(tmult(tmult(Rw,U1(:, curcomp)',1),U2(:,curcomp)',2))';
-    end
-    sum(QtRw_mmalt.^2,2)
 end
 
 if ~isfield(store, 'QtWQinvQtBQ')
@@ -128,8 +120,6 @@ if ~isfield(store, 'FdwrtQ')
 else
     FdwrtQ = store.FdwrtQ;
 end
-
-
 
 TTT=reshape(permute(reshape(FdwrtQ, M, N, 1, K), [2 4 1 3]),[N*K M]);
 TTT3d = permute(reshape(TTT', [M, N, K]), [2 1 3]);

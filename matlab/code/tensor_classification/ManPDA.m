@@ -71,17 +71,17 @@ if isempty(Us)
     end
 end
 
-
-[N, K1] = size(Us{1});
-[M, K2] = size(Us{2});
-U.U1 = Us{1};
-U.U2 = Us{2};
+Ks = [];
+for imode = 1:nmodes
+   U.(['U', num2str(imode)]) = Us{imode};
+   Ks(imode) = size(Us{imode}, 2);
+end
 
 [cmean_m_xmeans, xi_m_cmeans, nis] = classbased_differences(Xs, classes);
 
 % calculate Rw and Rb
 [~, ~, Rw, Rb] = parafacldaobj_matrixdata(U,...
-    cmean_m_xmeans, xi_m_cmeans, nis, K1, K2);
+    cmean_m_xmeans, xi_m_cmeans, nis, Ks(1), Ks(2));
 
 opts.intialtau = -1;
 opts.mxitr = maxits;
@@ -90,21 +90,20 @@ options.maxiter = maxits;
 
 switch optmeth
     case 'ManOpt'
-        %manifold = stiefelfactory(size(U, 1), size(U, 2));
-        
-        tuple.U1 = stiefelfactory(size(Us{1}, 1), size(Us{1}, 2));
-        tuple.U2 = stiefelfactory(size(Us{2}, 1), size(Us{2}, 2));
+        for imode = 1:nmodes
+            tuple.(['U', num2str(imode)]) = stiefelfactory(size(Us{imode}, 1), size(Us{imode}, 2));
+        end
         manifold = productmanifold(tuple);
         problem.M = manifold;
         
         % Define the problem cost function and its Euclidean gradient.
         problem.cost  = @(U, store) mycost(U, store,...
             cmean_m_xmeans, xi_m_cmeans, nis,...
-            K1, K2, Rw, Rb);
+            Ks(1), Ks(2), Rw, Rb);
         
         problem.egrad = @(U, store) mygrad(U, store,...
             cmean_m_xmeans, xi_m_cmeans, nis,...
-            K1, K2, Rw, Rb);
+            Ks(1), Ks(2), Rw, Rb);
         
         
         % Solve.
@@ -114,13 +113,13 @@ switch optmeth
     case 'bo13'
         [U, outs] = OptStiManAFBB_myvariant(U,...
             @parafacldaobj_matrixdata, opts, cmean_m_xmeans, xi_m_cmeans,...
-            nis, K1, K2, Rw, Rb);
+            nis, Ks(1), Ks(2), Rw, Rb);
         fvals = outs.FArray;
         
     case 'wen12'
         [U, outs] = OptStiefelGBB_myvariant(U,...
             @parafacldaobj_matrixdata, opts, cmean_m_xmeans, xi_m_cmeans,...
-            nis, K1, K2, Rw, Rb);
+            nis, Ks(1), Ks(2), Rw, Rb);
         fvals = outs.fvals;
         
     otherwise
@@ -130,8 +129,9 @@ end
 outputs.fvals = fvals;
 outputs.outs = outs;
 
-Us{1} = U.U1;%U(1:N, 1:K1);
-Us{2} = U.U2;%U((N+1):end, (K1+1):end);
+for imode = 1:nmodes
+   Us{imode} = U.(['U', num2str(imode)]);
+end
 
 if nargout >= 3
     Ys = cell(1, nsamples);
