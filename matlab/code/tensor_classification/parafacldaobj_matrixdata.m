@@ -38,18 +38,14 @@ end
 if ~storeexists || ~isfield(store, 'Rw') || ~isfield(store, 'Rb')
     
     if nargin < 7
-        obsexample = classmeandiffs(1,:,:);
-        sizeobs = size(obsexample);
-
-        permute_vector = [2:(length(sizeobs)), 1];
+        [~, ~, nmodes] = get_sizes(classmeandiffs, 1); % observations assumed to run along first mode
+        
+        permute_vector = [2:(nmodes+1), 1]; % move observations to run along last mode
         classmeandiffstensor = permute(classmeandiffs, permute_vector);
         observationdiffstensor = permute(observationdiffs, permute_vector);
-
-        I = sizeobs(2);
-        J = sizeobs(3);
-       
-        Rw =observationdiffstensor;
-        Rb = classmeandiffstensor.*permute(repmat(sqrt(nis), I,1,J), [1 3 2]);
+        
+        Rw = observationdiffstensor;
+        Rb = classwise_scalar_multiply(classmeandiffstensor, sqrt(nis));
     end
     store.Rw = Rw;
     store.Rb = Rb;

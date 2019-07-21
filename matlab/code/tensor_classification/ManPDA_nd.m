@@ -17,15 +17,8 @@ function [Us, outputs, Ys] = ManPDA_nd(Xs, classes, varargin)
 Xsample1 = Xs{1};
 sizeX = size(Xsample1);
 
-
 nmodes = length(sizeX);
 
-Xs_as_concatenated_matrix = cell2mat(Xs);
-Xs_as_matrix = permute(...
-    reshape(Xs_as_concatenated_matrix, [sizeX, length(Xs)]), ...
-    [1:(nmodes-1), nmodes+1, nmodes]);
-% Xs_as_matrix_obs_first_dim = permute(Xs_as_matrix, [nmodes+1, 1:nmodes]);
-% not sure it is advantageous to have the examples over the first dimension
 
 if nargout > 2
     [Us, outputs, Ys] = ManPDA(Xs, classes, varargin);

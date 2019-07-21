@@ -14,27 +14,19 @@ function [Us, outputs, Ys] = ManPDA(Xs, classes, varargin)
 if isa(Xs, 'cell')
     Xs = cell_array_to_nd_array(Xs);
 end
-    
-sizeXs = size(Xs);
-sizeX = sizeXs(2:end); % observations assumed to run along first mode
+[nsamples, sizeX, nmodes] = get_sizes(Xs, 1); % observations assumed to run along first mode
 
 if length(sizeX) > 2
     error(['ManPDA.m: Input data has more than two dimensions. '...
         'This function is only customised for two-dimensional (i.e. matrix) data.'])
 end
 
-nmodes = length(sizeX);
-nsamples = length(Xs);
-Fdifftol = 1e-10;
-Udifftol = 1e-12;
 maxits = 1000;
 Us = [];
 optmeth = 'ManOpt';
 
 lowerdims = sizeX;
 
-
-usestoppingcrit = true;
 opts = [];
 
 if ~isempty(varargin)
@@ -84,12 +76,8 @@ end
 [M, K2] = size(Us{2});
 U.U1 = Us{1};
 U.U2 = Us{2};
-%U = zeros(N+M, K1+K2);
-%U(1:N, 1:K1) = Us{1};
-%U((N+1):end, (K1+1):end) = Us{2};
 
 [cmean_m_xmeans, xi_m_cmeans, nis] = classbased_differences(Xs, classes);
-
 
 % calculate Rw and Rb
 [~, ~, Rw, Rb] = parafacldaobj_matrixdata(U,...

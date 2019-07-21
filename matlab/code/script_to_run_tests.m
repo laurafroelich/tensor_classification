@@ -2,7 +2,7 @@ import matlab.unittest.plugins.StopOnFailuresPlugin
 import matlab.unittest.TestRunner
 import matlab.unittest.TestSuite;
 
-test_file_name = 'test_classification_nd';
+test_file_name = 'test_classification';
 
 suite_cmda = matlab.unittest.TestSuite.fromName(...
 [test_file_name '/test_cmda_discrimination']);
@@ -46,7 +46,7 @@ runner = TestRunner.withTextOutput;
 %suite_bilinear_parafac, suite_lda_parafac, suite_lda_parafac_nr, ...
 %suite_lda_tucker, suite_lda_tucker_nr])
 
-result = runner.run([suite_hoda])
+result = runner.run([suite_lda_parafac])
 
 %result = runner.run(matlab.unittest.TestSuite.fromFile(...
 %[test_file_name '.m']))
