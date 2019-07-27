@@ -59,14 +59,23 @@ end
 Rw = store.Rw;
 Rb = store.Rb;
 
-U1 = U.U1;
-U2 = U.U2;
+Us = cell(1, nmodes);
+for imode = 1:nmodes
+   Us{imode} = U.(['U', num2str(imode)]);
+end
+
 permute_vector = [nmodes:-1:1 nmodes+1];
+Rw_reversed_mode_order = permute(Rw, permute_vector);
+Rb_reversed_mode_order = permute(Rb, permute_vector);
     
 if ~isfield(store, 'Q')
-    Q = reshape(U2, [mode_sizes(2) 1 K]);
-    A = reshape(U1, [1 mode_sizes(1) K]);
-    Q = reshape(bsxfun(@times,A,Q), [mode_size_product 1 K]);
+    % calculate all scalars in the Kronecker product of all projection
+    % matrices
+    Q = reshape(Us{nmodes}, [mode_sizes(nmodes) 1 K]);
+    for imode = (nmodes-1):-1:1
+        A = reshape(Us{imode}, [1 mode_sizes(imode) K]);
+        Q = reshape(bsxfun(@times,A,Q), [prod(mode_sizes(end:-1:imode)) 1 K]);
+    end
     Q = reshape(Q, [size(Q, 1) K]);
     store.Q = Q;
 else
@@ -74,15 +83,14 @@ else
 end
 
 if ~isfield(store, 'QtRw')
-    QtRw = Q' * reshape(permute(Rw, permute_vector), mode_size_product, nobs);
-    %QtRw = Q' * reshape(permute(Rw, [2 1 3]), prod(Rbsize(1:end-1)), nobs);
+    QtRw = Q' * reshape(Rw_reversed_mode_order, mode_size_product, nobs);
     store.QtRw = QtRw;
 else
     QtRw = store.QtRw;
 end
 
 if ~isfield(store, 'QtRb')
-    QtRb = Q' * reshape(permute(Rb, permute_vector), mode_size_product, nclasses);
+    QtRb = Q' * reshape(Rb_reversed_mode_order, mode_size_product, nclasses);
     store.QtRb = QtRb;
 else
     QtRb = store.QtRb;
@@ -114,14 +122,14 @@ F = trace(QtWQinvQtBQ);
 
 if ~isfield(store, 'FdwrtQ')
     if mode_size_product < nobs % perform multiplication in fastest order
-        FdwrtQ = (-2*(reshape(permute(Rw, permute_vector), ...
+        FdwrtQ = (-2*(reshape(Rw_reversed_mode_order, ...
             mode_size_product, nobs)*QtRw')*QtWQinvQtBQ + ...
-            2*reshape(permute(Rb, permute_vector), ...
+            2*reshape(Rb_reversed_mode_order, ...
             mode_size_product, nclasses)*QtRb')/QtWQ;
     else
-        FdwrtQ = (-2*reshape(permute(Rw, permute_vector), ...
+        FdwrtQ = (-2*reshape(Rw_reversed_mode_order, ...
             mode_size_product, nobs)*(QtRw'*QtWQinvQtBQ) + ...
-            2*reshape(permute(Rb, permute_vector), ...
+            2*reshape(Rb_reversed_mode_order, ...
             mode_size_product, nclasses)*QtRb')/QtWQ;
     end
     store.FdwrtQ = FdwrtQ;
@@ -129,13 +137,33 @@ else
     FdwrtQ = store.FdwrtQ;
 end
 
-TTT=reshape(permute(reshape(FdwrtQ, mode_sizes(2), mode_sizes(1), 1, K), [2 4 1 3]),[mode_sizes(1)*K mode_sizes(2)]);
-TTT3d = permute(reshape(TTT', [mode_sizes(2), mode_sizes(1), K]), permute_vector);
-G1 = cell2mat(arrayfun(@(x)(TTT3d(:,:,x)*U2(:,x)), 1:K, 'UniformOutput', false));
+reduced_dimensions = repmat(K, 1, nmodes);
 
-TTT=reshape(permute(reshape(FdwrtQ, mode_sizes(2), mode_sizes(1), K, 1), [2 4 1 3]),[mode_sizes(1) mode_sizes(2)*K]);
+imode=1;
+cost_derivative_new_size = [mode_sizes(end:-1:1), reduced_dimensions];
+cost_derivative_new_size(nmodes+imode) = 1;
+cost_derivative_2d_shape = mode_sizes;
+cost_derivative_2d_shape(imode) = cost_derivative_2d_shape(imode)*K;
+TTT=reshape(...
+    permute(...
+    reshape(FdwrtQ, cost_derivative_new_size),...
+    [2 4 1 3]),...
+    cost_derivative_2d_shape);
+TTT3d = permute(reshape(TTT', [mode_sizes(2), mode_sizes(1), K]), permute_vector);
+G1 = cell2mat(arrayfun(@(x)(TTT3d(:,:,x)*Us{2}(:,x)), 1:K, 'UniformOutput', false));
+
+imode=2;
+cost_derivative_new_size = [mode_sizes(end:-1:1), reduced_dimensions];
+cost_derivative_new_size(nmodes+imode) = 1;
+cost_derivative_2d_shape = mode_sizes;
+cost_derivative_2d_shape(imode) = cost_derivative_2d_shape(imode)*K;
+TTT=reshape(...
+    permute(...
+    reshape(FdwrtQ, cost_derivative_new_size),...
+    [2 4 1 3]),...
+    cost_derivative_2d_shape);
 TTT3d = permute(reshape(TTT, [mode_sizes(1), mode_sizes(2), K]), permute_vector);
-G2 = cell2mat(arrayfun(@(x)(TTT3d(:,:,x)*U1(:,x)), 1:K, 'UniformOutput', false));
+G2 = cell2mat(arrayfun(@(x)(TTT3d(:,:,x)*Us{1}(:,x)), 1:K, 'UniformOutput', false));
 
 F = -F;
 G.U1 = -G1;
