@@ -35,14 +35,20 @@ else
     storeexists = true;
 end
 
+[nclasses, mode_sizes, nmodes] = get_sizes(classmeandiffs, 1); % observations assumed to run along first mode
+mode_size_product = prod(mode_sizes);
+nobs = sum(nis);
+
 if ~storeexists || ~isfield(store, 'Rw') || ~isfield(store, 'Rb')
     
     if nargin < 7
         [~, ~, nmodes] = get_sizes(classmeandiffs, 1); % observations assumed to run along first mode
         
-        permute_vector = [2:(nmodes+1), 1]; % move observations to run along last mode
-        classmeandiffstensor = permute(classmeandiffs, permute_vector);
-        observationdiffstensor = permute(observationdiffs, permute_vector);
+        permute_vector_move_obs_to_last_mode = [2:(nmodes+1), 1]; % move observations to run along last mode
+        classmeandiffstensor = permute(classmeandiffs, ...
+            permute_vector_move_obs_to_last_mode);
+        observationdiffstensor = permute(observationdiffs, ...
+            permute_vector_move_obs_to_last_mode);
         
         Rw = observationdiffstensor;
         Rb = classwise_scalar_multiply(classmeandiffstensor, sqrt(nis));
@@ -53,34 +59,30 @@ end
 Rw = store.Rw;
 Rb = store.Rb;
 
-Rwsize = size(Rw);
-nobs = Rwsize(end);
-Rbsize = size(Rb);
-nclasses = Rbsize(end);
-
-N=Rbsize(1);
-M=Rbsize(2);
 U1 = U.U1;
 U2 = U.U2;
-
+permute_vector = [nmodes:-1:1 nmodes+1];
+    
 if ~isfield(store, 'Q')
-    Q = reshape(U2,[M 1 K]);
-    A = reshape(U1,[1 N K]);
-    Q = reshape(bsxfun(@times,A,Q),[N*M 1 K]);
-    Q = reshape(Q,[size(Q,1) K]);
+    Q = reshape(U2, [mode_sizes(2) 1 K]);
+    A = reshape(U1, [1 mode_sizes(1) K]);
+    Q = reshape(bsxfun(@times,A,Q), [mode_size_product 1 K]);
+    Q = reshape(Q, [size(Q, 1) K]);
     store.Q = Q;
 else
     Q = store.Q;
 end
+
 if ~isfield(store, 'QtRw')
-    QtRw = Q' * reshape(permute(Rw, [2 1 3]), M*N, nobs);
+    QtRw = Q' * reshape(permute(Rw, permute_vector), mode_size_product, nobs);
+    %QtRw = Q' * reshape(permute(Rw, [2 1 3]), prod(Rbsize(1:end-1)), nobs);
     store.QtRw = QtRw;
 else
     QtRw = store.QtRw;
 end
 
 if ~isfield(store, 'QtRb')
-    QtRb = Q' * reshape(permute(Rb, [2 1 3]), M*N, nclasses);
+    QtRb = Q' * reshape(permute(Rb, permute_vector), mode_size_product, nclasses);
     store.QtRb = QtRb;
 else
     QtRb = store.QtRb;
@@ -111,22 +113,28 @@ end
 F = trace(QtWQinvQtBQ);
 
 if ~isfield(store, 'FdwrtQ')
-    if M*N < nobs % perform multiplication in fastest order
-        FdwrtQ = (-2*(reshape(permute(Rw,[2 1 3]), M*N, nobs)*QtRw')*QtWQinvQtBQ + 2*reshape(permute(Rb,[2 1 3]), M*N, nclasses)*QtRb')/QtWQ;
+    if mode_size_product < nobs % perform multiplication in fastest order
+        FdwrtQ = (-2*(reshape(permute(Rw, permute_vector), ...
+            mode_size_product, nobs)*QtRw')*QtWQinvQtBQ + ...
+            2*reshape(permute(Rb, permute_vector), ...
+            mode_size_product, nclasses)*QtRb')/QtWQ;
     else
-        FdwrtQ = (-2*reshape(permute(Rw,[2 1 3]), M*N, nobs)*(QtRw'*QtWQinvQtBQ) + 2*reshape(permute(Rb,[2 1 3]), M*N, nclasses)*QtRb')/QtWQ;
+        FdwrtQ = (-2*reshape(permute(Rw, permute_vector), ...
+            mode_size_product, nobs)*(QtRw'*QtWQinvQtBQ) + ...
+            2*reshape(permute(Rb, permute_vector), ...
+            mode_size_product, nclasses)*QtRb')/QtWQ;
     end
     store.FdwrtQ = FdwrtQ;
 else
     FdwrtQ = store.FdwrtQ;
 end
 
-TTT=reshape(permute(reshape(FdwrtQ, M, N, 1, K), [2 4 1 3]),[N*K M]);
-TTT3d = permute(reshape(TTT', [M, N, K]), [2 1 3]);
+TTT=reshape(permute(reshape(FdwrtQ, mode_sizes(2), mode_sizes(1), 1, K), [2 4 1 3]),[mode_sizes(1)*K mode_sizes(2)]);
+TTT3d = permute(reshape(TTT', [mode_sizes(2), mode_sizes(1), K]), permute_vector);
 G1 = cell2mat(arrayfun(@(x)(TTT3d(:,:,x)*U2(:,x)), 1:K, 'UniformOutput', false));
 
-TTT=reshape(permute(reshape(FdwrtQ, M, N, K, 1), [2 4 1 3]),[N M*K]);
-TTT3d = permute(reshape(TTT, [N, M, K]), [2 1 3]);
+TTT=reshape(permute(reshape(FdwrtQ, mode_sizes(2), mode_sizes(1), K, 1), [2 4 1 3]),[mode_sizes(1) mode_sizes(2)*K]);
+TTT3d = permute(reshape(TTT, [mode_sizes(1), mode_sizes(2), K]), permute_vector);
 G2 = cell2mat(arrayfun(@(x)(TTT3d(:,:,x)*U1(:,x)), 1:K, 'UniformOutput', false));
 
 F = -F;
