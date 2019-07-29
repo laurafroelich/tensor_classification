@@ -11,12 +11,12 @@ function test_parafac_lda_discrimination(testCase)
     testCase.applyFixture(PathFixture('../../../../matlab_additions/manopt/', 'IncludeSubfolders', true));
 
     parafac_structure = true;
-    k = 2;
+    k = 3;
     
     project_matrices_verify_predictions(testCase, ...
     @(Xs, ys) ManPDA(Xs, ys, [k, k]), ...
     @(Xs, Xs_test, ys, ys_test, k, Us) ...
-    project_and_predict(Xs, Xs_test, ys, ys_test, k, Us, parafac_structure))
+    project_and_predict(Xs, Xs_test, ys, ys_test, k, Us, parafac_structure), k)
 end
 
 
@@ -205,7 +205,12 @@ function project_matrices_verify_predictions(testCase, ...
     [Xs, ys] = get_simple_data();
     Xs_test = Xs;
     ys_test = ys;
-    k = 2;
+    
+    if ~isempty(varargin)
+        k = varargin{1};
+    else
+        k = 2;
+    end
     
     Us = projection_learning_function(Xs, ys);
     
