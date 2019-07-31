@@ -139,7 +139,10 @@ end
 
 reduced_dimensions = repmat(K, 1, nmodes);
 
-imode=1;
+for imode=1:nmodes
+permute_vector = 1:(nmodes+1);
+permute_vector(imode) = [];
+permute_vector = [imode, permute_vector];
 cost_derivative_new_size = [mode_sizes(end:-1:1), reduced_dimensions];
 cost_derivative_new_size(nmodes+imode) = 1;
 cost_derivative_2d_shape = mode_sizes;
@@ -149,25 +152,48 @@ TTT=reshape(...
     reshape(FdwrtQ, cost_derivative_new_size),...
     [2 4 1 3]),...
     cost_derivative_2d_shape);
-TTT3d = permute(reshape(TTT', [mode_sizes(2), mode_sizes(1), K]), permute_vector);
-G1 = cell2mat(arrayfun(@(x)(TTT3d(:,:,x)*Us{2}(:,x)), 1:K, 'UniformOutput', false));
-
-imode=2;
-cost_derivative_new_size = [mode_sizes(end:-1:1), reduced_dimensions];
-cost_derivative_new_size(nmodes+imode) = 1;
-cost_derivative_2d_shape = mode_sizes;
-cost_derivative_2d_shape(imode) = cost_derivative_2d_shape(imode)*K;
-TTT=reshape(...
-    permute(...
-    reshape(FdwrtQ, cost_derivative_new_size),...
-    [2 4 1 3]),...
-    cost_derivative_2d_shape);
+%TTT3d = permute(reshape(TTT', [mode_sizes(2), mode_sizes(1), K]), permute_vector);
+%G1 = cell2mat(arrayfun(@(x)(TTT3d(:,:,x)*Us{2}(:,x)), 1:K, 'UniformOutput', false));
 TTT3d = permute(reshape(TTT, [mode_sizes(1), mode_sizes(2), K]), permute_vector);
-G2 = cell2mat(arrayfun(@(x)(TTT3d(:,:,x)*Us{1}(:,x)), 1:K, 'UniformOutput', false));
+G_imode = zeros(mode_sizes(imode), K);
+modes_to_multiply = setdiff(1:nmodes, imode);
+for mode = modes_to_multiply
+temp_tmult = tmult(TTT3d, Us{mode}', 2);
+end
+for ilowerdim = 1:K
+    G_imode(:, ilowerdim) = temp_tmult(:, ilowerdim, ilowerdim);
+end
+G.(['U', num2str(imode)]) = -G_imode;
+end
+% 
+% imode=2;
+% permute_vector = 1:(nmodes+1);
+% permute_vector(imode) = [];
+% permute_vector = [imode, permute_vector];
+% cost_derivative_new_size = [mode_sizes(end:-1:1), reduced_dimensions];
+% cost_derivative_new_size(nmodes+imode) = 1;
+% cost_derivative_2d_shape = mode_sizes;
+% cost_derivative_2d_shape(imode) = cost_derivative_2d_shape(imode)*K;
+% TTT=reshape(...
+%     permute(...
+%     reshape(FdwrtQ, cost_derivative_new_size),...
+%     [2 4 1 3]),...
+%     cost_derivative_2d_shape);
+% %TTT3d = permute(reshape(TTT, [mode_sizes(1), mode_sizes(2), K]), permute_vector);
+% %G2 = cell2mat(arrayfun(@(x)(TTT3d(:,:,x)*Us{1}(:,x)), 1:K, 'UniformOutput', false));
+% 
+% TTT3d = permute(reshape(TTT, [mode_sizes(1), mode_sizes(2), K]), permute_vector);
+% G_imode = zeros(mode_sizes(2), K);
+% temp_tmult = tmult(TTT3d, Us{1}', 2);
+% for ilowerdim = 1:K
+%     G_imode(:, ilowerdim) = temp_tmult(:, ilowerdim, ilowerdim);
+% end
+% 
+% G.(['U', num2str(imode)]) = -G_imode;
 
 F = -F;
-G.U1 = -G1;
-G.U2 = -G2;
+%G.U1 = -G1;
+%G.U2 = -G2;
 end
 
 
