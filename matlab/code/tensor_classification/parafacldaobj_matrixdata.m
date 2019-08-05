@@ -144,15 +144,14 @@ for imode=1:nmodes
     permute_vector(imode) = [];
     permute_vector = [imode, permute_vector];
     
-    cost_derivative_new_size = [mode_sizes(end:-1:1), reduced_dimensions];
-    cost_derivative_new_size(nmodes+imode) = 1;
+    cost_derivative_new_size = [mode_sizes(end:-1:1), K];
     cost_derivative_2d_shape = mode_sizes;
     cost_derivative_2d_shape(imode) = cost_derivative_2d_shape(imode)*K;
     
     TTT=reshape(...
         permute(...
         reshape(FdwrtQ, cost_derivative_new_size),...
-        [2 4 1 3]),...
+        [2 1 3]),...
         cost_derivative_2d_shape);
     
     TTT3d = permute(reshape(TTT, [mode_sizes, K]), permute_vector);
