@@ -11,7 +11,7 @@ function test_parafac_lda_discrimination(testCase)
     testCase.applyFixture(PathFixture('../../../../matlab_additions/manopt/', 'IncludeSubfolders', true));
 
     parafac_structure = true;
-    k = 3;
+    k = 2;
     
     project_matrices_verify_predictions(testCase, ...
     @(Xs, ys) ManPDA(Xs, ys, [k, k]), ...
