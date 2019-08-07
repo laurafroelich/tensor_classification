@@ -1,5 +1,5 @@
 function [F, G, Rw, Rb, store] = parafacldaobj_matrixdata(U,...
-    classmeandiffs, observationdiffs, nis, K1, K2, ...
+    classmeandiffs, observationdiffs, nis, K, ...
     Rw, Rb, store)
 %[F, G, Rw, Rb, store]...
 %    = parafacldaobj_matrixdata(U,...
@@ -17,17 +17,9 @@ function [F, G, Rw, Rb, store] = parafacldaobj_matrixdata(U,...
 % nis:              Vector containing number of observations from each
 %                   class.
 %
-% K1:               Number of components in mode 1.
-%
-% K2:               Number of components in mode 2.
+% K:               Number of components in each mode.
 %
 % Rw and Rb:        Optional input. Pre-calculated matrices.
-
-if K1~=K2
-    error('parafacldaobj_matrixdata.m: number of components must be the same for the two modes.')
-else
-    K=K1;
-end
 
 if nargin < 9
     storeexists = false;
@@ -61,13 +53,13 @@ Rb = store.Rb;
 
 Us = cell(1, nmodes);
 for imode = 1:nmodes
-   Us{imode} = U.(['U', num2str(imode)]);
+    Us{imode} = U.(['U', num2str(imode)]);
 end
 
 permute_vector = [nmodes:-1:1 nmodes+1];
 Rw_reversed_mode_order = permute(Rw, permute_vector);
 Rb_reversed_mode_order = permute(Rb, permute_vector);
-    
+
 if ~isfield(store, 'Q')
     % calculate all scalars in the Kronecker product of all projection
     % matrices
@@ -137,12 +129,8 @@ else
     FdwrtQ = store.FdwrtQ;
 end
 
-reduced_dimensions = repmat(K, 1, nmodes);
-
 for imode=1:nmodes
-    permute_vector = 1:(nmodes+1);
-    permute_vector(imode) = [];
-    permute_vector = [imode, permute_vector];
+    permute_vector = [imode nmodes:-1:(imode+1) (imode-1):-1:1 nmodes+1];
     
     cost_derivative_new_size = [mode_sizes(end:-1:1), K];
     cost_derivative_2d_shape = mode_sizes;
@@ -151,30 +139,24 @@ for imode=1:nmodes
     TTT=reshape(...
         permute(...
         reshape(FdwrtQ, cost_derivative_new_size),...
-        [2 1 3]),...
+        [nmodes:-1:1 nmodes+1]),...
         cost_derivative_2d_shape);
     
-    TTT3d = permute(reshape(TTT, [mode_sizes, K]), permute_vector);
+    TTT3d = reshape(TTT, [mode_sizes, K]);
     G_imode = zeros(mode_sizes(imode), K);
     modes_to_multiply = setdiff(1:nmodes, imode);
+    temp_tmult = TTT3d;
     for mode = modes_to_multiply
-        temp_tmult = tmult(TTT3d, Us{mode}', 2);
+        temp_tmult = tmult(temp_tmult, Us{mode}', mode);
     end
+    temp_tmult = permute(temp_tmult, permute_vector);
+    
+    S.type = '()';
     for ilowerdim = 1:K
-        G_imode(:, ilowerdim) = temp_tmult(:, ilowerdim, ilowerdim);
+        S.subs = [{':'} repmat([{ilowerdim}], 1, nmodes)];
+        G_imode(:, ilowerdim) = subsref(temp_tmult,S);
     end
     G.(['U', num2str(imode)]) = -G_imode;
 end
 F = -F;
 end
-
-
-
-
-
-
-
-
-
-
-
