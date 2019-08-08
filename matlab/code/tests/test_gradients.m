@@ -12,6 +12,8 @@ function test_parafac_lda_gradient(testCase)
         @parafacldaobj_matrixdata)
     analytical_vs_numerical_gradient(testCase, 'U2',...
         @parafacldaobj_matrixdata)
+    analytical_vs_numerical_gradient(testCase, 'U3',...
+        @parafacldaobj_matrixdata)
 end
 
 function temp_disable_test_tucker_lda_gradient(testCase)    
