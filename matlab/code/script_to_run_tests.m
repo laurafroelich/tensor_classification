@@ -2,7 +2,7 @@ import matlab.unittest.plugins.StopOnFailuresPlugin
 import matlab.unittest.TestRunner
 import matlab.unittest.TestSuite;
 
-test_file_name = 'test_classification';
+test_file_name = 'test_classification_nd';
 
 suite_cmda = matlab.unittest.TestSuite.fromName(...
 [test_file_name '/test_cmda_discrimination']);

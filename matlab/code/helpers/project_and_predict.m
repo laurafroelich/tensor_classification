@@ -39,10 +39,17 @@ predictions = mnrval(mnr_mod, x_test_proj_mat);
 end
 
 function diag_elems = get_diag_elems(x_projected, nobs, ncomps)
-diag_elems = NaN([nobs, ncomps]);
+k=ncomps(1);
+diag_elems = NaN([nobs, k]);
+
 for isample = 1:nobs
     if iscell(x_projected)
-        diag_elems(isample, :) = diag(x_projected{isample});
+        % use linear indices to get diagonal elements, as given here:
+        % https://stackoverflow.com/questions/5598900/how-can-i-index-the-diagonals-of-a-3-d-matrix-in-matlab
+        inds = diag(cumsum([1:(k+1):k^2; k^2.*ones(k-1,k)]));
+        temp = x_projected{isample};
+        diag_elems(isample, :) = temp(inds);
+        %diag_elems(isample, :) = diag(x_projected{isample});
     else
         diag_elems(isample, :) = diag(squeeze(x_projected(:, :, isample)));
     end

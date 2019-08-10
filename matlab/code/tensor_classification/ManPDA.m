@@ -16,11 +16,6 @@ if isa(Xs, 'cell')
 end
 [nsamples, sizeX, nmodes] = get_sizes(Xs, 1); % observations assumed to run along first mode
 
-if length(sizeX) > 2
-    error(['ManPDA.m: Input data has more than two dimensions. '...
-        'This function is only customised for two-dimensional (i.e. matrix) data.'])
-end
-
 maxits = 1000;
 Us = [];
 optmeth = 'ManOpt';
@@ -81,7 +76,7 @@ end
 
 % calculate Rw and Rb
 [~, ~, Rw, Rb] = parafacldaobj_matrixdata(U,...
-    cmean_m_xmeans, xi_m_cmeans, nis, Ks(1), Ks(2));
+    cmean_m_xmeans, xi_m_cmeans, nis, Ks(1));
 
 opts.intialtau = -1;
 opts.mxitr = maxits;
@@ -99,11 +94,11 @@ switch optmeth
         % Define the problem cost function and its Euclidean gradient.
         problem.cost  = @(U, store) mycost(U, store,...
             cmean_m_xmeans, xi_m_cmeans, nis,...
-            Ks(1), Ks(2), Rw, Rb);
+            Ks(1), Rw, Rb);
         
         problem.egrad = @(U, store) mygrad(U, store,...
             cmean_m_xmeans, xi_m_cmeans, nis,...
-            Ks(1), Ks(2), Rw, Rb);
+            Ks, Rw, Rb);
         
         
         % Solve.
@@ -150,19 +145,19 @@ end
 end
 
 function [F, store] = mycost(x, store, classmeandiffs, observationdiffs,...
-    nis, K1, K2, Rw, Rb)
+    nis, lowerdims, Rw, Rb)
 [F, ~, ~, ~, store]...
     = parafacldaobj_matrixdata(x,...
-    classmeandiffs, observationdiffs, nis, K1, K2, ...
+    classmeandiffs, observationdiffs, nis, lowerdims, ...
     Rw, Rb, store);
 end
 
 
 function [G, store] = mygrad(x, store, classmeandiffs, observationdiffs,...
-    nis, K1, K2, Rw, Rb)
+    nis, Ks, Rw, Rb)
 [~, G, ~, ~, store]...
     = parafacldaobj_matrixdata(x,...
-    classmeandiffs, observationdiffs, nis, K1, K2, ...
+    classmeandiffs, observationdiffs, nis, Ks(1), ...
     Rw, Rb, store);
 end
 
