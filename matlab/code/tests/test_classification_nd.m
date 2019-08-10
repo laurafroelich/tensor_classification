@@ -13,15 +13,12 @@ function test_cmda_discrimination(testCase)
     [Xs, ys] = get_simple_data();
     nmodes = length(size(Xs{1}));
     
-    lowerdims = repmat(2, 1, nmodes);
+    lowerdims = repmat(k, 1, nmodes);
     
-    CMDA(Xs, ys, [], lowerdims)
-
-    
-    %project_matrices_verify_predictions(testCase, ...
-    %@(Xs, ys) CMDA(Xs, ys, [], [k, k]), ...
-    %@(Xs, Xs_test, ys, ys_test, k, Us) ...
-    %project_and_predict(Xs, Xs_test, ys, ys_test, k, Us, parafac_structure))
+    project_matrices_verify_predictions(testCase, ...
+    @(Xs, ys) CMDA(Xs, ys, [], lowerdims), ...
+    @(Xs, Xs_test, ys, ys_test, k, Us) ...
+    project_and_predict(Xs, Xs_test, ys, ys_test, k, Us, parafac_structure))
 end
 
 
@@ -147,8 +144,14 @@ function test_dater_discrimination(testCase)
     parafac_structure = false;
     k = 2;
     
+    
+    [Xs, ys] = get_simple_data();
+    nmodes = length(size(Xs{1}));
+    
+    lowerdims = repmat(k, 1, nmodes);
+    
     project_matrices_verify_predictions(testCase, ...
-    @(Xs, ys) DATER(Xs, ys, [], [k, k]), ...
+    @(Xs, ys) DATER(Xs, ys, [], lowerdims), ...
     @(Xs, Xs_test, ys, ys_test, k, Us) ...
     project_and_predict(Xs, Xs_test, ys, ys_test, k, Us, parafac_structure))
 end
@@ -181,54 +184,5 @@ function test_hoda_discrimination(testCase)
     @(Xs, ys) HODA(Xs, ys, [k, k]), ...
     @(Xs, Xs_test, ys, ys_test, k, Us) ...
     project_and_predict(Xs, Xs_test, ys, ys_test, k, Us, parafac_structure))
-end
-
-function test_bilinear_parafac_discrimination(testCase)
-    import matlab.unittest.fixtures.PathFixture
-    testCase.applyFixture(PathFixture('../', 'IncludeSubfolders', true));
-    testCase.applyFixture(PathFixture('../../../../matlab_additions/02582nway_models/', 'IncludeSubfolders', true));
-    testCase.applyFixture(PathFixture('../../../../matlab_additions/immoptibox/', 'IncludeSubfolders', true));
-    
-    k = 2;
-    nrandinits = 1;
-    [Xs, ys] = get_simple_data();
-    Xs_test = Xs;
-    ys_test = ys;
-    
-    
-    predicted_probabilities = bilinear_get_predictions(...
-        @bilinear_logreg, ...
-        Xs, Xs_test, ys, k, nrandinits);
-
-    [~, predictions] = max(predicted_probabilities, [], 2);
-    
-    accuracy = mean(predictions == ys_test);
-    
-    verifyEqual(testCase, accuracy, 1, 'AbsTol', 1e-1)
-end
-
-
-function test_bilinear_tucker_discrimination(testCase)
-    import matlab.unittest.fixtures.PathFixture
-    testCase.applyFixture(PathFixture('../', 'IncludeSubfolders', true));
-    testCase.applyFixture(PathFixture('../../../../matlab_additions/02582nway_models/', 'IncludeSubfolders', true));
-    testCase.applyFixture(PathFixture('../../../../matlab_additions/immoptibox/', 'IncludeSubfolders', true));
-    
-    k = 2;
-    nrandinits = 1;
-    [Xs, ys] = get_simple_data();
-    Xs_test = Xs;
-    ys_test = ys;
-    
-    
-    predicted_probabilities = bilinear_get_predictions(...
-        @bilinear_logreg_tucker, ...
-        Xs, Xs_test, ys, k, nrandinits);
-
-    [~, predictions] = max(predicted_probabilities, [], 2);
-    
-    accuracy = mean(predictions == ys_test);
-    
-    verifyEqual(testCase, accuracy, 1, 'AbsTol', 1e-1)
 end
 

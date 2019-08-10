@@ -6,7 +6,7 @@ else
     parafac_structure = varargin{1};
 end
 
-
+nmodes = length(Us);
 x_train_projected = tensor_projection(x_train, Us);
 x_test_projected = tensor_projection(x_test, Us);
 
@@ -15,9 +15,16 @@ n_test_obs = length(y_test);
 
 if ~parafac_structure
     if iscell(x_train_projected)
-        x_train_proj_mat = reshape(cell2mat(x_train_projected)', [ncomps^2, n_train_obs])';
-        x_test_proj_mat = reshape(cell2mat(x_test_projected)', [ncomps^2, n_test_obs])';
-    else
+        permute_vector = [nmodes+1, 2:nmodes, 1];
+        x_train_proj_mat = cell_array_to_nd_array(x_train_projected); %reshape(cell2mat(x_train_projected)', [ncomps^2, n_train_obs])';
+        x_test_proj_mat = cell_array_to_nd_array(x_test_projected); %reshape(cell2mat(x_test_projected)', [ncomps^2, n_test_obs])';
+        x_train_proj_mat = reshape(permute(x_train_proj_mat, permute_vector),...
+            [ncomps^nmodes, n_train_obs])';
+        x_test_proj_mat = reshape(permute(x_test_proj_mat, permute_vector),...
+            [ncomps^nmodes, n_train_obs])';
+        %x_train_proj_mat = reshape(cell2mat(x_train_projected)', [ncomps^2, n_train_obs])';
+        %x_test_proj_mat = reshape(cell2mat(x_test_projected)', [ncomps^2, n_test_obs])';
+else
         x_train_proj_mat = reshape(x_train_projected, [ncomps^2, n_train_obs])';
         x_test_proj_mat = reshape(x_test_projected, [ncomps^2, n_test_obs])';
     end

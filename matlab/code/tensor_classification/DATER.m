@@ -47,15 +47,8 @@ if isa(Xs, 'cell')
     Xs = cell_array_to_nd_array(Xs);
 end
     
-sizeXs = size(Xs);
-sizeX = sizeXs(2:end); % observations assumed to run along first mode
 tol=1e-6;
-nmodes = length(sizeX);
-
-if length(sizeX) > 2
-    error(['DATER.m: Input data has more than two dimensions. '...
-        'This function is only customised for two-dimensional (i.e. matrix) data.'])
-end
+[nobs, sizeX, nmodes] = get_sizes(Xs, 1); % observations assumed to run along first mode
 
 if length(varargin) >= 1 && ~isempty(varargin{1})
     Tmax = varargin{1};
@@ -120,42 +113,31 @@ end
 [classmeandiffs, observationdiffs, nis] = classbased_differences(Xs, classes);
 
 sizeobs = size(classmeandiffs);
-I = sizeobs(2);
-J = sizeobs(3);
-nclasses = sizeobs(1);
-nobs = size(observationdiffs, 1);
+[nclasses, ~, nmodes] = get_sizes(classmeandiffs, 1); % observations assumed to run along first mode
 
-%permute_vector = [length(sizeobs), 2:(length(sizeobs)-1), 1];
 permute_vector = [2:(length(sizeobs)), 1];
 classmeandiffstensor = permute(classmeandiffs, permute_vector);
 observationdiffstensor = permute(observationdiffs, permute_vector);
 
 Rw =observationdiffstensor;
-Rb = classmeandiffstensor.*permute(repmat(sqrt(nis), I,1,J), [1 3 2]);
+Rb = classwise_scalar_multiply(classmeandiffstensor, sqrt(nis)); 
 % multiply all entries in classmeandiffstensor by the square root of the
 % size of their class. When Rb is multiplied by its own transpose, the
 % class sizes are automatically accounted for in the resulting sum.
 
 innerits = 0;
 for iit = 1:Tmax
-    
     oldUs = Us;
     for kmode = 1:nmodes
-        othermode = setdiff(1:2, kmode);
         innerits = innerits +1;
         
-        QtRb_mm=tmult(Rb,Us{othermode}', othermode);
-        QtRb=reshape(permute(QtRb_mm, [kmode, othermode, 3]),[sizeX(kmode),...
-            lowerdims(othermode)*nclasses]);
-        B = QtRb*QtRb';
+        between_class_scatter = get_mode_specific_scatter_matrix(Rb, kmode, lowerdims, Us, ...
+            nclasses, nmodes, sizeX);
         
-        QtRw_mm=tmult(Rw,Us{othermode}',othermode);
-        QtRw=reshape(permute(QtRw_mm, [kmode, othermode, 3]),[sizeX(kmode),...
-            lowerdims(othermode)*nobs]);
-        W = QtRw*QtRw';
+        within_class_scatter = get_mode_specific_scatter_matrix(Rw, kmode, lowerdims, Us, ...
+            nobs, nmodes, sizeX);
         
-        
-        [U, eigvals] = eig(B, W);
+        [U, eigvals] = eig(between_class_scatter, within_class_scatter);
         
         eigvals = diag(eigvals);
         [~, sortedinds] = sort(eigvals, 'descend');
@@ -163,8 +145,8 @@ for iit = 1:Tmax
         Us{kmode} = U(:, sortedinds(1:lowerdims(kmode)));
         
         if nargout >=4
-            Btemp = Us{kmode}'*B*Us{kmode};
-            Wtemp = Us{kmode}'*W*Us{kmode};
+            Btemp = Us{kmode}'*between_class_scatter*Us{kmode};
+            Wtemp = Us{kmode}'*within_class_scatter*Us{kmode};
             objfuncvals(innerits) = -trace(Btemp)/trace(Wtemp);
         end
         if nargout >=5
