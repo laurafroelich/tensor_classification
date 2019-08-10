@@ -50,14 +50,10 @@ function [Us, iit, errs, objfuncvals, objfuncvals_traceratio, Ys] = CMDA(Xs, cla
 
 if isa(Xs, 'cell')
     Xs = cell_array_to_nd_array(Xs);
-    % Xs = reshape(cell2mat(classmeandiffs), I, J, nclasses);
 end
     
-
-Xsample1 = Xs{1};
-sizeX = size(Xsample1);
+[nobs, sizeX, nmodes] = get_sizes(Xs, 1); % observations assumed to run along first mode
 tol=1e-6;
-nmodes = length(sizeX);
 
 if length(varargin) >= 1 && ~isempty(varargin{1})
     Tmax = varargin{1};
@@ -88,7 +84,8 @@ if length(varargin)>=4 && ~isempty(varargin{4})
                 end
             otherwise
                 warning(['CMDA.m: initialisation method not recognised, '...
-                    'initialising with all-one matrices as proposed in li14 (see help for citation)'])
+                    'initialising with all-one matrices as proposed ' ...
+                    'in li14 (see help for citation)'])
                 % initialisation as proposed in li14
                 Us = cell(1, nmodes);
                 for kmode = 1:nmodes
@@ -124,23 +121,14 @@ end
 % of observations from each class (stored in nis).
 [classmeandiffs, observationdiffs, nis] = classbased_differences(Xs, classes);
 
-obsexample = classmeandiffs{1};
-sizeobs = size(obsexample);
-I = sizeobs(1);
-J = sizeobs(2);
-nclasses = length(classmeandiffs);
-nobs = length(observationdiffs);
+[nclasses, ~, nmodes] = get_sizes(classmeandiffs, 1); % observations assumed to run along first mode
 
-% matricise classmeandifss and observationdiffs to use fast matrix
-% multiplication.
-
-classmeandiffstensor = reshape(cell2mat(classmeandiffs), ...
-    I, J, nclasses);
-observationdiffstensor = reshape(cell2mat(observationdiffs), ...
-    I, J, nobs);
+permute_vector = [2:(nmodes+1), 1]; % move observations to run along last mode
+classmeandiffstensor = permute(classmeandiffs, permute_vector);
+observationdiffstensor = permute(observationdiffs, permute_vector);
 
 Rw = observationdiffstensor;
-Rb = classmeandiffstensor.*permute(repmat(sqrt(nis), I,1,J), [1 3 2]);
+Rb = classwise_scalar_multiply(classmeandiffstensor, sqrt(nis));
 % multiply all entries in classmeandiffstensor by the square root of the
 % size of their class. When Rb is multiplied by its own transpose, the
 % class sizes are automatically accounted for in the resulting sum.
@@ -152,18 +140,29 @@ while ~stop && iit < Tmax
     iit = iit+1;
     oldUs = Us;
     for kmode = 1:nmodes
-        othermode = setdiff(1:2, kmode);
         innerits = innerits +1;
         
+        permute_vector = 1:(nmodes+1);
+        permute_vector(1) = kmode;
+        permute_vector(kmode) = 1;
         
-        QtRb_mm=tmult(Rb,Us{othermode}', othermode);
-        QtRb=reshape(permute(QtRb_mm, [kmode, othermode, 3]),[sizeX(kmode),...
-            lowerdims(othermode)*nclasses]);
+        othermodes = setdiff(1:nmodes, kmode);
+        
+        QtRb_mm = Rb;
+        for othermode = othermodes
+        QtRb_mm=tmult(QtRb_mm,Us{othermode}', othermode);
+        end
+        
+        QtRb=reshape(permute(QtRb_mm, permute_vector),[sizeX(kmode),...
+            prod(lowerdims(othermodes))*nclasses]);
         B = QtRb*QtRb';
         
-        QtRw_mm=tmult(Rw,Us{othermode}',othermode);
-        QtRw=reshape(permute(QtRw_mm, [kmode, othermode, 3]),[sizeX(kmode),...
-            lowerdims(othermode)*nobs]);
+        QtRw_mm = Rw;
+        for othermode = othermodes
+        QtRw_mm=tmult(QtRw_mm,Us{othermode}',othermode);
+        end
+        QtRw=reshape(permute(QtRw_mm, permute_vector),[sizeX(kmode),...
+            prod(lowerdims(othermodes))*nobs]);
         W = QtRw*QtRw';
         
         

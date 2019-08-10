@@ -7,8 +7,12 @@ function [Us, outputs, Ys] = ManTDA_normsratio(Xs, classes, varargin)
 % varargin{3}: opts
 %
 
-Xsample1 = Xs{1};
-sizeX = size(Xsample1);
+if isa(Xs, 'cell')
+    Xs = cell_array_to_nd_array(Xs);
+end
+    
+sizeXs = size(Xs);
+sizeX = sizeXs(2:end); % observations assumed to run along first mode
 
 if length(sizeX) > 2
     error(['ManTDA_normsratio.m: Input data has more than two dimensions. '...

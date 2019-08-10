@@ -4,6 +4,7 @@ end
 
 
 function test_parafac_lda_discrimination(testCase)
+    import matlab.unittest.plugins.StopOnFailuresPlugin
     import matlab.unittest.fixtures.PathFixture
     testCase.applyFixture(PathFixture('../', 'IncludeSubfolders', true));
     testCase.applyFixture(PathFixture('../../../../matlab_additions/02582nway_models/', 'IncludeSubfolders', true));

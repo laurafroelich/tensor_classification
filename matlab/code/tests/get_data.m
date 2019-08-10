@@ -9,7 +9,7 @@ function [Xs, classes] = get_data(nsamples, xdims)
     end
 
     classes = round(rand(nsamples,1))+1;
-    Xs = cell(1, nsamples);
+    Xs = cell(nsamples, 1);
 
     for isample = 1:nsamples
         if classes(isample) == 1

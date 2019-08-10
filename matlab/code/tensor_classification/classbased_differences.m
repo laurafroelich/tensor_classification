@@ -9,42 +9,42 @@ function [cmean_m_xmeans, xi_m_cmeans, nis] = classbased_differences(Xs, classes
 % cmean_m_xmean: class means minus overall mean
 % xi_m_cmean: observations minus corresponding class mean
 
-nsamples = length(Xs);
 nclasses = length(unique(classes));
 
-
-
-Xsum = Xs{1};
-for isample = 2:nsamples
-    Xsum = Xsum + Xs{isample};
+if isa(Xs, 'cell')
+    Xs = cell_array_to_nd_array(Xs);
 end
-Xmean = Xsum/nsamples;
 
-%nmodes = length(size(Xs{1}));
-%catXs=cat(nmodes+1,Xs{:});
-%Xmean = mean(catXs, nmodes+1); 
+n_modes = length(size(Xs)) - 1;
+
+Xmean = mean(Xs, 1);
 
 Xmeansclasses = cell(1, nclasses);
-Xsumsclasses = cell(1, nclasses);
 nis = NaN(1, nclasses);
+% https://se.mathworks.com/matlabcentral/answers/367188-how-to-filter-an-n-d-array-with-matrix-indexing
+C = repmat({':'},1,n_modes + 1); % colons for all trailing dimensions
+xi_m_cmeans = Xs;
+
 for iclass = 1:nclasses
     inds = find(classes==iclass);
-    Xsumsclasses{iclass} = Xs{inds(1)};
-    for iind = 2:length(inds)
-        Xsumsclasses{iclass} = Xsumsclasses{iclass} + Xs{inds(iind)};
-    end
+    C{1} = inds; 
+    
     nis(iclass) = length(inds);
-    Xmeansclasses{iclass} = Xsumsclasses{iclass}/nis(iclass);
+    
+    Xmeansclasses{iclass} = mean(subsref(Xs,substruct('()',C)), 1); 
+    current_class_mean_obs_differences = ...
+        subsref(Xs,substruct('()',C)) - Xmeansclasses{iclass};
+    
+    xi_m_cmeans = subsasgn(xi_m_cmeans, substruct('()',C),...
+        current_class_mean_obs_differences); 
 end
 
-xi_m_cmeans = cell(1, nsamples);
-for isample = 1:nsamples
-    xi_m_cmeans{isample} = Xs{isample}-Xmeansclasses{classes(isample)};
-end
-
-cmean_m_xmeans = cell(1, nclasses);
+cmean_m_xmeans = cell(nclasses, 1);
 for iclass = 1:nclasses
     cmean_m_xmeans{iclass} = Xmeansclasses{iclass}-Xmean;
 end
+
+cmean_m_xmeans = cell_array_to_nd_array(cmean_m_xmeans);
+cmean_m_xmeans = squeeze(cmean_m_xmeans);
 
 end
