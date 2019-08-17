@@ -12,11 +12,11 @@ function test_parafac_lda_gradient(testCase)
         @parafacldaobj_matrixdata)
     analytical_vs_numerical_gradient(testCase, 'U2',...
         @parafacldaobj_matrixdata)
-    analytical_vs_numerical_gradient(testCase, 'U3',...
-        @parafacldaobj_matrixdata)
+     analytical_vs_numerical_gradient(testCase, 'U3',...
+         @parafacldaobj_matrixdata)
 end
 
-function temp_disable_test_tucker_lda_gradient(testCase)    
+function test_tucker_lda_gradient(testCase)    
     import matlab.unittest.fixtures.PathFixture
     testCase.applyFixture(PathFixture('../', 'IncludeSubfolders', true));
     testCase.applyFixture(PathFixture('../../../../matlab_additions/02582nway_models/', 'IncludeSubfolders', true));
@@ -25,13 +25,16 @@ function temp_disable_test_tucker_lda_gradient(testCase)
         @tensorsldaobj_matrixdata)
     analytical_vs_numerical_gradient(testCase, 'U2',...
         @tensorsldaobj_matrixdata)
+    analytical_vs_numerical_gradient(testCase, 'U3',...
+        @tensorsldaobj_matrixdata)
 end
 
 function analytical_vs_numerical_gradient(testCase, matrix_name, ...
     objective_function)
     p = 5;
     q = 7;
-    data_dimensions = [5, 7, 3];
+    r = 3;
+    data_dimensions = [p, q, r];
     lower_dimensions = [2, 2, 2];
     nsamples = 100;
     [Xs, ys] = get_data(nsamples, data_dimensions);
@@ -40,7 +43,7 @@ function analytical_vs_numerical_gradient(testCase, matrix_name, ...
         classbased_differences(Xs, ys);
     
     myfun = @(U) objective_function(U,...
-        classmeandiffs, observationdiffs, nis, lower_dimensions(1));
+        classmeandiffs, observationdiffs, nis, lower_dimensions);
 
     initial_matrices_struct = get_initial_matrices(data_dimensions, lower_dimensions);
     numerically_estimated_gradient = get_numerically_estimated_gradient(...
@@ -53,7 +56,7 @@ function analytical_vs_numerical_gradient(testCase, matrix_name, ...
         analyticalderiv.(matrix_name), 'fro')/...
         norm(analyticalderiv.(matrix_name), 'fro');
     
-    verifyEqual(testCase, 0, actual_difference, 'AbsTol', 1e-5)
+    verifyEqual(testCase, actual_difference, 0, 'AbsTol', 1e-5)
 end
 
 function matrices_in_struct = get_initial_matrices(data_dimensions, Ks)

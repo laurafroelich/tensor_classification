@@ -1,6 +1,6 @@
 function [F, G, Rw, Rb, store]...
     = tensorsldaobj_matrixdata(U,...
-    classmeandiffs, observationdiffs, nis, K1, K2, ...
+    classmeandiffs, observationdiffs, nis, Ks, ...
     Rw, Rb, store)
 %[F, G, Rw, Rb, store]...
 %    = tensorsldaobj_matrixdata(U,...
@@ -26,6 +26,9 @@ function [F, G, Rw, Rb, store]...
 %
 % Rw and Rb:        Optional input. Pre-calculated matrices.
 
+[nclasses, mode_sizes, nmodes] = get_sizes(classmeandiffs, 1); % observations assumed to run along first mode
+mode_size_product = prod(mode_sizes);
+
 if nargin < 9
     storeexists = false;
 else
@@ -35,18 +38,14 @@ end
 if ~storeexists || ~isfield(store, 'Rw') || ~isfield(store, 'Rb')
     
     if nargin < 7
-        obsexample = classmeandiffs(1,:,:);
-        sizeobs = size(obsexample);
 
-        permute_vector = [2:(length(sizeobs)), 1];
-        classmeandiffstensor = permute(classmeandiffs, permute_vector);
-        observationdiffstensor = permute(observationdiffs, permute_vector);
+        permute_vector_move_obs_to_last_mode = [2:(nmodes+1), 1]; % move observations to run along last mode
+        classmeandiffstensor = permute(classmeandiffs, permute_vector_move_obs_to_last_mode);
+        observationdiffstensor = permute(observationdiffs, permute_vector_move_obs_to_last_mode);
 
-        I = sizeobs(2);
-        J = sizeobs(3);
-        
         Rw =observationdiffstensor;
-        Rb = classmeandiffstensor.*permute(repmat(sqrt(nis), I,1,J), [1 3 2]);
+        
+        Rb = classwise_scalar_multiply(classmeandiffstensor, sqrt(nis));
     end
     store.Rw = Rw;
     store.Rb = Rb;
@@ -55,32 +54,35 @@ Rw = store.Rw;
 Rb = store.Rb;
 
 Rwsize = size(Rw);
-
 nobs = Rwsize(end);
-datadims = size(Rb);
-nclasses = datadims(length(datadims));
 
-N=datadims(1);
-M=datadims(2);
-%U1=U(1:N, 1:K1);
-%U2=U((N+1):end, (K1+1):end);
-U1 = U.U1;
-U2 = U.U2;
+Us = cell(1, nmodes);
+for imode = 1:nmodes
+    Us{imode} = U.(['U', num2str(imode)]);
+end
+
+permute_vector = [nmodes:-1:1 nmodes+1];
 
 if ~isfield(store, 'QtRw')
-    QtRw_mm=tmult(tmult(Rw,U1',1),U2',2);
-    QtRw=reshape(permute(QtRw_mm,[2 1 3]),[K2*K1,nobs]);
-    %mynumb=25; cond(reshape(permute(QtRw_mm(:,:,1:mynumb),[2 1 3]),[L*K,mynumb]))
+    QtRw = Rw;
+    for imode = 1:nmodes
+        QtRw = tmult(QtRw, Us{imode}', imode);
+    end
+    
+    QtRw = permute(QtRw, permute_vector);
+    QtRw = reshape(QtRw, prod(Ks), nobs);
     store.QtRw = QtRw;
 else
     QtRw = store.QtRw;
 end
 
 if ~isfield(store, 'QtRb')
-    QtRb_mm=tmult(tmult(Rb,U1',1),U2',2);
-    QtRb=reshape(permute(QtRb_mm,[2 1 3]),[K2*K1,nclasses]);
-    %mynumb=1; cond(reshape(permute(QtRb_mm(:,:,1:mynumb),[2 1 3]),[L*K,mynumb]))
-    
+    QtRb = Rb;
+    for imode = 1:nmodes 
+        QtRb = tmult(QtRb, Us{imode}', imode);
+    end
+    QtRb = permute(QtRb, permute_vector);
+    QtRb = reshape(QtRb, prod(Ks), nclasses);
     store.QtRb = QtRb;
 else
     QtRb = store.QtRb;
@@ -109,56 +111,56 @@ end
 
 F = trace(QtWQinvQtBQ);
 
-% inefficient calculations
-if false
-    Q = kron(U1, U2);
-    Qt= Q';
-    W = zeros(I*J, I*J);
-    for iobs = 1:nobs
-        curobs = observationdiffstensor(:,:,iobs);
-        tempw = reshape(curobs', I*J, 1);
-        W = W + tempw*tempw';
-    end
-    B = zeros(I*J, I*J);
-    for iclass = 1:nclasses
-        curclass = classmeandiffstensor(:,:,iclass);
-        tempb = reshape(curclass', I*J, 1);
-        B = B + nis(iclass)*tempb*tempb';
-    end
-    QtWQx = Qt*W*Q;
-    QtBQx = Qt*B*Q;
-    QtWQinvQtBQx = (QtWQx)\(QtBQx);
-    Fx = trace(QtWQinvQtBQx);
-end
-
 if ~isfield(store, 'FdwrtQ')
-    if M*N < nobs % perform multiplication in fastest order
-        FdwrtQ = (-2*(reshape(permute(Rw,[2 1 3]), M*N, nobs)*QtRw')*QtWQinvQtBQ + 2*reshape(permute(Rb,[2 1 3]), M*N, nclasses)*QtRb')/QtWQ;
+    
+    if mode_size_product < nobs % perform multiplication in fastest order
+        FdwrtQ = (-2*(reshape(permute(Rw, permute_vector), ...
+            mode_size_product, nobs)*QtRw')*QtWQinvQtBQ + ...
+            2*reshape(permute(Rb, permute_vector), ...
+            mode_size_product, nclasses)*QtRb')/QtWQ;
     else
-        FdwrtQ = (-2*reshape(permute(Rw,[2 1 3]), M*N, nobs)*(QtRw'*QtWQinvQtBQ) + 2*reshape(permute(Rb,[2 1 3]), M*N, nclasses)*QtRb')/QtWQ;
+        FdwrtQ = (-2*reshape(permute(Rw, permute_vector), ...
+            mode_size_product, nobs)*(QtRw'*QtWQinvQtBQ) + ...
+            2*reshape(permute(Rb, permute_vector), ...
+            mode_size_product, nclasses)*QtRb')/QtWQ;
     end
     store.FdwrtQ = FdwrtQ;
 else
     FdwrtQ = store.FdwrtQ;
 end
 
-if ~isfield(store, 'TTT')
-    TTT=reshape(permute(reshape(FdwrtQ, M, N, K2, K1), [2 4 1 3]),[N*K1 M*K2]);
-    store.TTT = TTT;
-else
-    TTT = store.TTT;
+% Use this permutation vector to change the order of modes such that
+% the mode that was highest is moved to lowest and vice versa. Also,
+% follow each mode dimensions by its corresponding representation in
+% the lower projected dimension.
+permute_vector_mode_followed_by_lower_dims = [];
+for temp_mode = 1:nmodes
+    permute_vector_mode_followed_by_lower_dims = ...
+        [temp_mode, temp_mode+nmodes, ...
+        permute_vector_mode_followed_by_lower_dims];
 end
 
-G1 =reshape(TTT*U2(:),[N K1]);
-G2=reshape(TTT'*U1(:),[M K2]);
-
+for imode=1:nmodes
+    
+    cost_derivative_new_size = [mode_sizes(end:-1:1), Ks];
+    cost_derivative_2d_shape = mode_sizes.*Ks;
+    
+    TTT=reshape(...
+        permute(...
+        reshape(FdwrtQ, cost_derivative_new_size),...
+        permute_vector_mode_followed_by_lower_dims),...
+        cost_derivative_2d_shape);
+    
+    modes_to_multiply = setdiff(1:nmodes, imode);
+    temp_tmult = TTT;
+    for mode = modes_to_multiply
+        U = Us{mode};
+        temp_tmult = tmult(temp_tmult, U(:)', mode);
+    end
+    G.(['U', num2str(imode)]) = -reshape(temp_tmult, mode_sizes(imode), Ks(imode));
+end
 F = -F;
-%G = zeros(N+M, K1+K2);
-%G(1:N, 1:K1) = G1;
-%G((N+1):end, (K1+1):end) = G2;
-%G=-G;
-G.U1 = -G1;
-G.U2 = -G2;
+
 end
 
 
