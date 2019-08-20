@@ -72,112 +72,46 @@ else
     Ap1 = store.Ap1;
 end
 
-if ~isfield(store, 'Bp1')
-    Bp1 = tmult(observationdiffstensor,Us{2}',2);
-    store.Bp1 = Bp1;
-else
-    Bp1 = store.Bp1;
+Bp1 = tmult(observationdiffstensor,Us{2}',2);
+
+Ap2 = tmult(classmeandiffstensor,Us{1}',1);
+
+Bp2 = tmult(observationdiffstensor,Us{1}',1);
+
+AAp1 = tmult(Ap1,Us{1}',1);
+
+BBp1 = tmult(Bp1,Us{1}',1);
+
+AAp2 = tmult(Ap2,Us{2}',2);
+
+BBp2 = tmult(Bp2,Us{2}',2);
+
+mAAp1=repmat(eye(size(AAp1,1)),[1 1 size(AAp1,3)]);
+
+mBBp1=repmat(eye(size(BBp1,1)),[1 1 size(BBp1,3)]);
+
+trUtAU = sum(squeeze(sum(sum(mAAp1.*AAp1.^2, 1), 2)).*nis');
+
+trUtBU = sum(sum(sum(mBBp1.*BBp1.^2)));
+
+
+Ss = cell(1, nmodes);
+for imode = 1:nmodes
+    Ss{imode} = zeros(size(Us{imode}));
 end
 
-if ~isfield(store, 'Ap2')
-    Ap2 = tmult(classmeandiffstensor,Us{1}',1);
-    store.Ap2 = Ap2;
-else
-    Ap2 = store.Ap2;
+for c=1:size(Ap1,3)
+    Ss{1}=Ss{1}+Ap1(:,:,c)*diag(diag(AAp1(:,:,c)))*nis(c);
+    Ss{2}=Ss{2}+Ap2(:,:,c)'*diag(diag(AAp2(:,:,c)))*nis(c);
 end
 
-if ~isfield(store, 'Bp2')
-    Bp2 = tmult(observationdiffstensor,Us{1}',1);
-    store.Bp2 = Bp2;
-else
-    Bp2 = store.Bp2;
+Ts = cell(1, nmodes);
+for imode = 1:nmodes
+    Ts{imode} = zeros(size(Us{imode}));
 end
-
-if ~isfield(store, 'AAp1')
-    AAp1 = tmult(Ap1,Us{1}',1);
-    store.AAp1 = AAp1;
-else
-    AAp1 = store.AAp1;
-end
-
-if ~isfield(store, 'BBp1')
-    BBp1 = tmult(Bp1,Us{1}',1);
-    store.BBp1 = BBp1;
-else
-    BBp1 = store.BBp1;
-end
-
-if ~isfield(store, 'AAp2')
-    AAp2 = tmult(Ap2,Us{2}',2);
-    store.AAp2 = AAp2;
-else
-    AAp2 = store.AAp2;
-end
-
-if ~isfield(store, 'BBp2')
-    BBp2 = tmult(Bp2,Us{2}',2);
-    store.BBp2 = BBp2;
-else
-    BBp2 = store.BBp2;
-end
-
-if ~isfield(store, 'mAAp1')
-    mAAp1=repmat(eye(size(AAp1,1)),[1 1 size(AAp1,3)]);
-    store.mAAp1 = mAAp1;
-else
-    mAAp1 = store.mAAp1;
-end
-
-if ~isfield(store, 'mBBp1')
-    mBBp1=repmat(eye(size(BBp1,1)),[1 1 size(BBp1,3)]);
-    store.mBBp1 = mBBp1;
-else
-    mBBp1 = store.mBBp1;
-end
-
-if ~isfield(store, 'trUtAU')
-    trUtAU = sum(squeeze(sum(sum(mAAp1.*AAp1.^2, 1), 2)).*nis');
-    store.trUtAU = trUtAU;
-else
-    trUtAU = store.trUtAU;
-end
-
-if ~isfield(store, 'trUtBU')
-    trUtBU = sum(sum(sum(mBBp1.*BBp1.^2)));
-    store.trUtBU = trUtBU;
-else
-    trUtBU = store.trUtBU;
-end
-
-
-if ~isfield(store, 'Ss')
-    Ss = cell(1, nmodes);
-    for imode = 1:nmodes
-        Ss{imode} = zeros(size(Us{imode}));
-    end
-    
-    for c=1:size(Ap1,3)
-        Ss{1}=Ss{1}+Ap1(:,:,c)*diag(diag(AAp1(:,:,c)))*nis(c);
-        Ss{2}=Ss{2}+Ap2(:,:,c)'*diag(diag(AAp2(:,:,c)))*nis(c);
-    end
-    store.Ss = Ss;
-else
-    Ss = store.Ss;
-end
-
-if ~isfield(store, 'Ts')
-    
-    Ts = cell(1, nmodes);
-    for imode = 1:nmodes
-        Ts{imode} = zeros(size(Us{imode}));
-    end
-    for o=1:size(Bp1,3)
-        Ts{1}=Ts{1}+Bp1(:,:,o)*diag(diag(BBp1(:,:,o)))';
-        Ts{2}=Ts{2}+Bp2(:,:,o)'*diag(diag(BBp2(:,:,o)));
-    end
-    store.Ts = Ts;
-else
-    Ts = store.Ts;
+for o=1:size(Bp1,3)
+    Ts{1}=Ts{1}+Bp1(:,:,o)*diag(diag(BBp1(:,:,o)))';
+    Ts{2}=Ts{2}+Bp2(:,:,o)'*diag(diag(BBp2(:,:,o)));
 end
 
 for imode = 1:nmodes
