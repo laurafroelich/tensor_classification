@@ -39,12 +39,6 @@ if ~all(Ks == K)
         ' were given as sizes of lower dimensions'])
 end
 
-if nargin < 9
-    storeexists = false;
-else
-    storeexists = true;
-end
-
 [nclasses, mode_sizes, nmodes] = get_sizes(classmeandiffs, 1); % observations assumed to run along first mode
 mode_size_product = prod(mode_sizes);
 nobs = sum(nis);
@@ -58,64 +52,59 @@ for imode = 1:nmodes
 end
 
 if nargin <=6
-    
     permute_vector = [2:(length(sizeobs)), 1];
     classmeandiffstensor = permute(classmeandiffs, permute_vector);
     observationdiffstensor = permute(observationdiffs, permute_vector);
+end
+
+between_classes_projected = classmeandiffstensor;
+between_obs_projected = observationdiffstensor;
+for imode = 1:nmodes
+    between_classes_projected = tmult(between_classes_projected, Us{imode}', imode);
+    between_obs_projected = tmult(between_obs_projected, Us{imode}', imode);
+end
+
+mAAp1=repmat(eye(K),[1 1 nclasses]);
+
+mBBp1=repmat(eye(K),[1 1 nobs]);
+
+trUtAU = sum(squeeze(sum(sum(mAAp1.*between_classes_projected.^2, 1), 2)).*nis');
+
+trUtBU = sum(sum(sum(mBBp1.*between_obs_projected.^2)));
+
+
+for imode = 1:nmodes
+    T = zeros(size(Us{imode}));
     
-end
-
-if ~storeexists || ~isfield(store, 'Ap1')
-    Ap1 = tmult(classmeandiffstensor,Us{2}',2);
-    store.Ap1 = Ap1;
-else
-    Ap1 = store.Ap1;
-end
-
-Bp1 = tmult(observationdiffstensor,Us{2}',2);
-
-Ap2 = tmult(classmeandiffstensor,Us{1}',1);
-
-Bp2 = tmult(observationdiffstensor,Us{1}',1);
-
-AAp1 = tmult(Ap1,Us{1}',1);
-
-BBp1 = tmult(Bp1,Us{1}',1);
-
-AAp2 = tmult(Ap2,Us{2}',2);
-
-BBp2 = tmult(Bp2,Us{2}',2);
-
-mAAp1=repmat(eye(size(AAp1,1)),[1 1 size(AAp1,3)]);
-
-mBBp1=repmat(eye(size(BBp1,1)),[1 1 size(BBp1,3)]);
-
-trUtAU = sum(squeeze(sum(sum(mAAp1.*AAp1.^2, 1), 2)).*nis');
-
-trUtBU = sum(sum(sum(mBBp1.*BBp1.^2)));
-
-
-Ss = cell(1, nmodes);
-for imode = 1:nmodes
-    Ss{imode} = zeros(size(Us{imode}));
-end
-
-for c=1:size(Ap1,3)
-    Ss{1}=Ss{1}+Ap1(:,:,c)*diag(diag(AAp1(:,:,c)))*nis(c);
-    Ss{2}=Ss{2}+Ap2(:,:,c)'*diag(diag(AAp2(:,:,c)))*nis(c);
-end
-
-Ts = cell(1, nmodes);
-for imode = 1:nmodes
-    Ts{imode} = zeros(size(Us{imode}));
-end
-for o=1:size(Bp1,3)
-    Ts{1}=Ts{1}+Bp1(:,:,o)*diag(diag(BBp1(:,:,o)))';
-    Ts{2}=Ts{2}+Bp2(:,:,o)'*diag(diag(BBp2(:,:,o)));
-end
-
-for imode = 1:nmodes
-    G.(['U', num2str(imode)]) = -(trUtBU*2*Ss{imode}-trUtAU*2*Ts{imode})/trUtBU^2;
+    othermodes = setdiff(1:nmodes, imode);
+    
+    temp_projected_obs = observationdiffstensor;
+    temp_projected_classes = classmeandiffstensor;
+    for other_mode = othermodes
+        temp_projected_obs = tmult(temp_projected_obs, Us{other_mode}', other_mode);
+        temp_projected_classes = tmult(temp_projected_classes, Us{other_mode}', other_mode);
+    end
+    
+    permute_vector2 = [1:nmodes, nmodes+1];
+    permute_vector2(1) = imode;
+    permute_vector2(imode) = 1;
+    temp_projected_obs = permute(temp_projected_obs, permute_vector2);
+    temp_projected_classes = permute(temp_projected_classes, permute_vector2);
+    
+    for o=1:nobs
+        T = T + ...
+            temp_projected_obs(:,:,o) * ...
+            diag(diag(between_obs_projected(:,:,o)));
+    end
+    
+    S = zeros(size(Us{imode}));
+    for c=1:nclasses
+        S = S + ...
+            temp_projected_classes(:,:,c) * ...
+            diag(diag(between_classes_projected(:,:,c)))*nis(c);
+    end
+    
+    G.(['U', num2str(imode)]) = -(trUtBU*2*S-trUtAU*2*T)/trUtBU^2;
 end
 
 F = -trUtAU/trUtBU;

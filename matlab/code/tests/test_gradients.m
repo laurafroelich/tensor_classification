@@ -49,7 +49,7 @@ function analytical_vs_numerical_gradient(testCase, matrix_name, ...
     q = 7;
     r = 3;
     data_dimensions = [p, q];
-    lower_dimensions = [2, 2];
+    lower_dimensions = [3, 3];
     nsamples = 100;
     [Xs, ys] = get_data(nsamples, data_dimensions);
     
