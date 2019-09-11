@@ -61,12 +61,12 @@ for imode = 1:nmodes
 end
 
 all_inds = get_level_wise_diag_inds(K, length(nis));
-trUtAU = sum(sum(reshape(between_classes_projected(all_inds).^2, [K, length(nis)])).*nis);
+trUtBU = sum(sum(reshape(between_classes_projected(all_inds).^2, [K, length(nis)])).*nis);
 % for two dimensions:
 % sum(squeeze(sum(sum(mAAp1.*between_classes_projected.^2, 1), 2)).*nis');
 
 all_inds = get_level_wise_diag_inds(K, nobs);
-trUtBU = sum(sum(reshape(between_obs_projected(all_inds).^2, [K, nobs])));
+trUtWU = sum(between_obs_projected(all_inds).^2);
 
 S_inds.type = '()';
 subs = repmat({':'}, 1, nmodes);
@@ -91,46 +91,39 @@ for imode = 1:nmodes
     repmat_vector = ones(1, nmodes);
     repmat_vector(1) = mode_sizes(imode);
     
+    rep_vector = ones(1, nmodes+1);
+    rep_vector(1) = mode_sizes(imode);
+    rep_vector = mat2cell(rep_vector, 1, ones(1, numel(rep_vector)));
+    
     diagonal_indices = get_level_wise_diag_inds(K, nmodes-1);
     
-    T = zeros(size(Us{imode}));
-    for o=1:nobs
-        S_inds.subs = [subs, o];
-        temp_slice = subsref(between_obs_projected, S_inds);
-        diagonal_elements = temp_slice(diagonal_indices);
-        T = T + ...
-            subsref(temp_projected_obs, S_inds).*...
-            repmat(diagonal_elements', repmat_vector);
-        %diag(diagonal_elements);
-        %repmat(reshape(diagonal_elements, [1, 3, 1]), [mode_sizes(imode), 1, 3]);
-            %repmat(reshape(diagonal_elements, [1, 1, 3]), [mode_sizes(imode), 3, 1]); % * ... %temp_projected_obs(:,:,o) * ...
-            %diag(diag(...
-            %subsref(between_obs_projected, S_inds) ... %between_obs_projected(:,:,o)...
-            %));
-    end
+    diagonal_indices_obs = get_level_wise_diag_inds(K, nobs);
+    between_obs_projected_diagonal = reshape(between_obs_projected(diagonal_indices_obs), [K, nobs]);
+    mytempmat = temp_projected_obs.*...
+        reshape(repelem(between_obs_projected_diagonal, rep_vector{:}), ...
+        [mode_sizes(imode), K, nobs]);
+    T = sum(mytempmat, nmodes+1);
+    
     
     S = zeros(size(Us{imode}));
     for c=1:nclasses
         S_inds.subs = [subs, c];
         temp_slice = subsref(between_classes_projected, S_inds);
-        diagonal_elements = temp_slice(diagonal_indices);
+        diagonal_elements = temp_slice(diagonal_indices)';
+        diagonal_elements = reshape(diagonal_elements, [1, repmat(K, 1, nmodes-1)]);
         
         S = S + ...
             subsref(temp_projected_classes, S_inds).*...
-            repmat(diagonal_elements', repmat_vector)...         %diag(diagonal_elements)...
+            repmat(diagonal_elements, repmat_vector)... 
          *nis(c);   
-        %repmat(reshape(diagonal_elements, [1, 3, 1]), [mode_sizes(imode), 1, 3]);
-            %repmat(reshape(diagonal_elements, [1, 1, 3]), [mode_sizes(imode), 3, 1]);
-        %S = S + ...
-        %    subsref(temp_projected_classes, S_inds) * ... %temp_projected_classes(:,:,c) * ...
-        %    diag(diag(...
-        %    subsref(between_classes_projected, S_inds) ... %between_classes_projected(:,:,c)...
-        %    ))*nis(c);
     end
     
-    G.(['U', num2str(imode)]) = -(trUtBU*2*S-trUtAU*2*T)/trUtBU^2;
+    
+    
+    G.(['U', num2str(imode)]) = -(trUtWU*2*S-trUtBU*2*T)/trUtWU^2;
+    
 end
 
-F = -trUtAU/trUtBU;
+F = -trUtBU/trUtWU;
 
 end
