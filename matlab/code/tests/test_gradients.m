@@ -39,15 +39,13 @@ function test_parafac_lda_gradient_nr(testCase)
         @parafacldaobj_matrixdata_normsratio)
     analytical_vs_numerical_gradient(testCase, 'U2',...
         @parafacldaobj_matrixdata_normsratio)
-    %analytical_vs_numerical_gradient(testCase, 'U3',...
-    %    @parafacldaobj_matrixdata_normsratio)
 end
 
 function analytical_vs_numerical_gradient(testCase, matrix_name, ...
     objective_function)
     p = 5;
     q = 7;
-    r = 3;
+    r = 4;
     data_dimensions = [p, q];
     lower_dimensions = [3, 3];
     nsamples = 100;

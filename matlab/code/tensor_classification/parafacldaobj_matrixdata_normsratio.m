@@ -62,14 +62,9 @@ end
 
 all_inds = get_level_wise_diag_inds(K, length(nis));
 trUtBU = sum(sum(reshape(between_classes_projected(all_inds).^2, [K, length(nis)])).*nis);
-% for two dimensions:
-% sum(squeeze(sum(sum(mAAp1.*between_classes_projected.^2, 1), 2)).*nis');
 
 all_inds = get_level_wise_diag_inds(K, nobs);
 trUtWU = sum(between_obs_projected(all_inds).^2);
-
-S_inds.type = '()';
-subs = repmat({':'}, 1, nmodes);
 
 for imode = 1:nmodes
     
@@ -88,39 +83,32 @@ for imode = 1:nmodes
     temp_projected_obs = permute(temp_projected_obs, permute_vector2);
     temp_projected_classes = permute(temp_projected_classes, permute_vector2);
     
-    repmat_vector = ones(1, nmodes);
-    repmat_vector(1) = mode_sizes(imode);
-    
     rep_vector = ones(1, nmodes+1);
     rep_vector(1) = mode_sizes(imode);
+    rep_vector(2:(nmodes-1)) = K;
     rep_vector = mat2cell(rep_vector, 1, ones(1, numel(rep_vector)));
     
-    diagonal_indices = get_level_wise_diag_inds(K, nmodes-1);
+    diagonal_indices_obs = get_level_wise_diag_inds(K, nobs, nmodes);
+    between_obs_projected_diagonal = reshape(...
+        between_obs_projected(diagonal_indices_obs), [K, nobs]);
     
-    diagonal_indices_obs = get_level_wise_diag_inds(K, nobs);
-    between_obs_projected_diagonal = reshape(between_obs_projected(diagonal_indices_obs), [K, nobs]);
-    mytempmat = temp_projected_obs.*...
+    scaled_projected_obs_nd = temp_projected_obs.*...
         reshape(repelem(between_obs_projected_diagonal, rep_vector{:}), ...
-        [mode_sizes(imode), K, nobs]);
-    T = sum(mytempmat, nmodes+1);
+        [mode_sizes(imode), repmat(K, 1, nmodes-1), nobs]);
+    scaled_projected_obs_nd_sum = sum(scaled_projected_obs_nd, nmodes+1);
     
     
-    S = zeros(size(Us{imode}));
-    for c=1:nclasses
-        S_inds.subs = [subs, c];
-        temp_slice = subsref(between_classes_projected, S_inds);
-        diagonal_elements = temp_slice(diagonal_indices)';
-        diagonal_elements = reshape(diagonal_elements, [1, repmat(K, 1, nmodes-1)]);
-        
-        S = S + ...
-            subsref(temp_projected_classes, S_inds).*...
-            repmat(diagonal_elements, repmat_vector)... 
-         *nis(c);   
-    end
+    diagonal_indices_classes = get_level_wise_diag_inds(K, nclasses, nmodes);
+    between_classes_projected_diagonal = reshape(...
+        between_classes_projected(diagonal_indices_classes), [K, nclasses]);
     
+    scaled_projected_classes_nd = temp_projected_classes.*...
+        reshape(repelem(between_classes_projected_diagonal.*nis, rep_vector{:}), ...
+        [mode_sizes(imode), repmat(K, 1, nmodes-1), nclasses]);
+    scaled_projected_classes_nd_sum = sum(scaled_projected_classes_nd, nmodes+1);
     
-    
-    G.(['U', num2str(imode)]) = -(trUtWU*2*S-trUtBU*2*T)/trUtWU^2;
+    G.(['U', num2str(imode)]) = -(trUtWU*2*scaled_projected_classes_nd_sum...
+        -trUtBU*2*scaled_projected_obs_nd_sum)/trUtWU^2;
     
 end
 
