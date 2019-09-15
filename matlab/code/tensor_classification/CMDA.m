@@ -55,55 +55,22 @@ end
 [nobs, sizeX, nmodes] = get_sizes(Xs, 1); % observations assumed to run along first mode
 tol=1e-6;
 
-if length(varargin) >= 1 && ~isempty(varargin{1})
-    Tmax = varargin{1};
-else
-    Tmax = 100;
-end
-
-if length(varargin)>=2 && ~isempty(varargin{2})
-    lowerdims = varargin{2};
-else
-    lowerdims = sizeX;
-end
-
-if length(varargin)>=3 && ~isempty(varargin{3})
-    usestoppingcrit = varargin{3};
-else
-    usestoppingcrit = true;
-end
-
 if length(varargin)>=4 && ~isempty(varargin{4})
     Us = varargin{4};
     if ischar(Us)
-        switch Us
-            case 'randinit'
-                Us = cell(1, nmodes);
-                for kmode = 1:nmodes
-                    Us{kmode} = orth(randn(sizeX(kmode), lowerdims(kmode)));
-                end
-            otherwise
+        if ~(strcmp(Us, 'randinit') || strcmp(Us, 'ones') || ...
+                strcmp(Us, 'identity'))
                 warning(['CMDA.m: initialisation method not recognised, '...
-                    'initialising with all-one matrices as proposed ' ...
-                    'in li14 (see help for citation)'])
+                    'initialising with identity matrices as proposed in li14 (see help for citation)'])
                 % initialisation as proposed in li14
-                Us = cell(1, nmodes);
-                for kmode = 1:nmodes
-                    Us{kmode} = ones(sizeX(kmode), lowerdims(kmode));
-                end
+                varargin{4} = 'ones';
         end
     end
 else
-    % initialisation as proposed in li14
-    Us = cell(1, nmodes);
-    for kmode = 1:nmodes
-        Us{kmode} = ones(sizeX(kmode), lowerdims(kmode));
-    end
+    varargin{4} = 'ones';
 end
 
-
-
-
+[Tmax, lowerdims, usestoppingcrit, Us] = parse_varargin(sizeX, nmodes, varargin{:});
 %% run CMDA
 errs = NaN(Tmax, 1);
 

@@ -21,31 +21,10 @@ if isa(Xs, 'cell')
     Xs = cell_array_to_nd_array(Xs);
 end
     
-sizeXs = size(Xs);
-sizeX = sizeXs(2:end); % observations assumed to run along first mode
-nmodes = length(sizeX);
+[nobs, sizeX, nmodes] = get_sizes(Xs, 1); % observations assumed to run along first mode
 
-
-if length(sizeX) > 2
-    error(['HODA.m: Input data has more than two dimensions. '...
-        'This function is only customised for two-dimensional (i.e. matrix) data.'])
-end
-
-
-if isempty(varargin) || isempty(varargin{1})
-    lowerdims = sizeX;
-else
-    lowerdims = varargin{1};
-end
-
-if isempty(lowerdims)
-    lowerdims = sizeX;
-end
-
-Us = cell(1, nmodes);
-for kmode = 1:nmodes
-    Us{kmode} = orth(randn(sizeX(kmode), lowerdims(kmode)));
-end
+[~, lowerdims, ~, Us] = parse_varargin(sizeX, nmodes, [], varargin{1}, ...
+    [], 'orth');
 
 % calculate Xc - X for each class, where Xc is the class mean and X is the
 % overall mean (stored in classmeandiffs) and Xcj - Xc where Xcj is the
@@ -53,26 +32,19 @@ end
 % of observations from each class (stored in nis).
 [classmeandiffs, observationdiffs, nis] = classbased_differences(Xs, classes);
 
+[nclasses, ~, nmodes] = get_sizes(classmeandiffs, 1); % observations assumed to run along first mode
 
-sizeobs = size(classmeandiffs);
-I = sizeobs(2);
-J = sizeobs(3);
-nclasses = sizeobs(1);
-nsamples = size(observationdiffs, 1);
-
-permute_vector = [2:(length(sizeobs)), 1];
+permute_vector = [2:(nmodes+1), 1]; % move observations to run along last mode
 classmeandiffstensor = permute(classmeandiffs, permute_vector);
 observationdiffstensor = permute(observationdiffs, permute_vector);
-Xs = permute(Xs, permute_vector);
 
 Rw = observationdiffstensor;
-Rb = classmeandiffstensor.*permute(repmat(sqrt(nis), I,1,J), [1 3 2]);
+Rb = classwise_scalar_multiply(classmeandiffstensor, sqrt(nis));
 % multiply all entries in classmeandiffstensor by the square root of the
 % size of their class. When Rb is multiplied by its own transpose, the
 % class sizes are automatically accounted for in the resulting sum.
 
 maxits = 1000;
-
 
 its = 0;
 while true && its < maxits
@@ -80,23 +52,24 @@ while true && its < maxits
     oldUs = Us;
     difference = 0;
     for kmode = 1:nmodes
-        othermode = setdiff(1:2, kmode);
         
-        QtRb_mm=tmult(Rb,Us{othermode}', othermode);
-        QtRb=reshape(permute(QtRb_mm, [kmode, othermode, 3]),[sizeX(kmode),...
-            lowerdims(othermode)*nclasses]);
-        B = QtRb*QtRb';
+        between_class_scatter = get_mode_specific_scatter_matrix(Rb, kmode, lowerdims, Us, ...
+            nclasses, nmodes, sizeX);
         
-        QtRw_mm=tmult(Rw,Us{othermode}',othermode);
-        QtRw=reshape(permute(QtRw_mm, [kmode, othermode, 3]),[sizeX(kmode),...
-            lowerdims(othermode)*nsamples]);
-        W = QtRw*QtRw';
+        within_class_scatter = get_mode_specific_scatter_matrix(Rw, kmode, lowerdims, Us, ...
+            nobs, nmodes, sizeX);
         
-        phi = trace(Us{kmode}' * B * Us{kmode})/trace(Us{kmode}' * W * Us{kmode});
         
-        [U, ~] = eigs(B-phi*W, lowerdims(kmode));
+        phi = trace(Us{kmode}' * between_class_scatter * Us{kmode})/...
+            trace(Us{kmode}' * within_class_scatter * Us{kmode});
+        
+        [U, ~] = eigs(between_class_scatter-phi*within_class_scatter, lowerdims(kmode));
         UUt = U*U';
-        Xs_minus_n = matricizing(tmult(Xs, Us{othermode}', othermode), kmode);
+        Xs_minus_n = Xs;
+        for mode = setdiff(1:nmodes, kmode)
+            Xs_minus_n = tmult(Xs_minus_n, Us{mode}', mode+1);
+        end
+        Xs_minus_n = matricizing(Xs_minus_n, kmode+1);
         [Us{kmode}, ~] = eigs(UUt * (Xs_minus_n*Xs_minus_n') * UUt, lowerdims(kmode));
         
         difference = norm(Us{kmode}-oldUs{kmode}, 'fro')/(lowerdims(kmode)*sum(sizeX));

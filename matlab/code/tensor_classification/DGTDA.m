@@ -20,17 +20,11 @@ function [Us, objfuncval, Ys] = DGTDA(Xs, classes, varargin)
 %   Data Classification',
 %   IEEE Transactions on Pattern Analysis and Machine Intelligence
 
-
-Xsample1 = Xs{1};
-sizeX = size(Xsample1);
-nmodes = length(sizeX);
-nsamples = length(Xs);
-nclasses = length(unique(classes));
-
-if length(sizeX) > 2
-    error(['DGTDA.m: Input data has more than two dimensions. '...
-        'This function is only customised for two-dimensional (i.e. matrix) data.'])
+if isa(Xs, 'cell')
+    Xs = cell_array_to_nd_array(Xs);
 end
+    
+[nobs, sizeX, nmodes] = get_sizes(Xs, 1); % observations assumed to run along first mode
 
 if isempty(varargin) || isempty(varargin{1})
     lowerdims = sizeX;
@@ -53,17 +47,22 @@ classmeandiffstensor = permute(classmeandiffs, permute_vector);
 observationdiffstensor = permute(observationdiffs, permute_vector);
 
 all_modes = 1:nmodes;
-nclasses = sizeobs(1);
+nclasses = length(nis);
 Bs = cell(nmodes, 1);
 for nmode = 1:nmodes
-    mode_permute_vector = [nmode, setdiff(all_modes, nmode)];
+    othermodes = setdiff(all_modes, nmode);
+    mode_permute_vector = [nmode, setdiff(1:(nmodes+1), nmode)];
     diffmatricised = permute(...
-        classmeandiffstensor(:, :, 1), mode_permute_vector);
+        classmeandiffstensor, mode_permute_vector);
+    diffmatricised = reshape(diffmatricised, ...
+        [sizeX(nmode), nclasses*prod(sizeX(othermodes))]);
     Bs{nmode} = nis(1)*(diffmatricised*diffmatricised');
     
     for iclass=2:nclasses
         diffmatricised = permute(...
-        classmeandiffstensor(:, :, iclass), mode_permute_vector); 
+        classmeandiffstensor, mode_permute_vector); 
+    diffmatricised = reshape(diffmatricised, ...
+        [sizeX(nmode), nclasses*prod(sizeX(othermodes))]);
         Bs{nmode} = Bs{nmode} + nis(iclass)*(diffmatricised*diffmatricised');
     end
 end
@@ -71,11 +70,14 @@ end
 
 Ws = cell(nmodes, 1);
 for nmode = 1:nmodes
-    mode_permute_vector = [nmode, setdiff(all_modes, nmode)];
+    othermodes = setdiff(all_modes, nmode);
+    mode_permute_vector = [nmode, setdiff(1:(nmodes+1), nmode)];
     Ws{nmode} = zeros(size(Bs{nmode}));
-    for isample=1:nsamples
+    for isample=1:nobs
         diffmatricised = permute(...
-            observationdiffstensor(:, :, isample), mode_permute_vector);
+            observationdiffstensor, mode_permute_vector);
+    diffmatricised = reshape(diffmatricised, ...
+        [sizeX(nmode), nobs*prod(sizeX(othermodes))]);
         Ws{nmode} = Ws{nmode} + (diffmatricised*diffmatricised');
     end
 end
