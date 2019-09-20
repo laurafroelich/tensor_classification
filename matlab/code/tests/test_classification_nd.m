@@ -38,11 +38,14 @@ function project_matrices_verify_predictions(testCase, ...
     Xs_test = Xs;
     ys_test = ys;
     k = 2;
+    nmodes = length(size(Xs{1}));
+    
+    lowerdims = repmat(k, 1, nmodes);
     
     Us = projection_learning_function(Xs, ys);
     
     predicted_probabilities = prediction_function(Xs, Xs_test, ys,...
-        ys_test, k, Us);
+        ys_test, lowerdims, Us);
     
     [~, predictions] = max(predicted_probabilities, [], 2);
     
@@ -66,8 +69,15 @@ function test_parafac_lda_discrimination(testCase)
     parafac_structure = true;
     k = 2;
     
+    Xs = get_simple_data();
+    
+    nmodes = length(size(Xs{1}));
+    
+    lowerdims = repmat(k, 1, nmodes);
+    
+    
     project_matrices_verify_predictions(testCase, ...
-    @(Xs, ys) ManPDA(Xs, ys, [k, k]), ...
+    @(Xs, ys) ManPDA(Xs, ys, lowerdims), ...
     @(Xs, Xs_test, ys, ys_test, k, Us) ...
     project_and_predict(Xs, Xs_test, ys, ys_test, k, Us, parafac_structure))
 end
@@ -81,9 +91,10 @@ function test_parafac_norms_ratio_discrimination(testCase)
 
     parafac_structure = true;
     k = 2;
+    lowerdims = repmat(k, 1, nmodes);
     
     project_matrices_verify_predictions(testCase, ...
-    @(Xs, ys) ManPDA_normsratio(Xs, ys, [k, k]), ...
+    @(Xs, ys) ManPDA_normsratio(Xs, ys, lowerdims), ...
     @(Xs, Xs_test, ys, ys_test, k, Us) ...
     project_and_predict(Xs, Xs_test, ys, ys_test, k, Us, parafac_structure))
 end
