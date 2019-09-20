@@ -1,10 +1,10 @@
 function [F, G, classmeandiffstensor, observationdiffstensor, store] = ...
     parafacldaobj_matrixdata_normsratio(U,...
-    classmeandiffs, observationdiffs, nis, K1, K2,...
+    classmeandiffs, observationdiffs, nis, Ks,...
     classmeandiffstensor, observationdiffstensor, store)
 % [F, G, classmeandiffstensor, observationdiffstensor] = ...
 %  parafacldaobj_matrixdata_normsratio(U,...
-%    classmeandiffs, observationdiffs, nis, K1, K2,...
+%    classmeandiffs, observationdiffs, nis, Ks,...
 %    classmeandiffstensor, observationdiffstensor)
 %
 % Utooptimise:      If modetooptimise is 1, I*K1 matrix where K1 is the
@@ -31,151 +31,87 @@ function [F, G, classmeandiffstensor, observationdiffstensor, store] = ...
 %
 % Ap and Bp:        Optional input. Pre-calculated matrices.
 
-if K1~=K2
-    error(['parafacldaobj_matrixdata: number of factors in each mode'...
-        ' must be equal.'])
+K = Ks(1);
+
+if ~all(Ks == K)
+    warning(['parafacldaobj_matrixdata_normsratio.m: for PARAFAC, all projection ', ...
+        'dimensions must be the same size, but ', num2str(Ks), ...,
+        ' were given as sizes of lower dimensions'])
 end
 
-if nargin < 9
-    storeexists = false;
-else
-    storeexists = true;
+[nclasses, mode_sizes, nmodes] = get_sizes(classmeandiffs, 1); % observations assumed to run along first mode
+nobs = sum(nis);
+
+Us = cell(1, nmodes);
+for imode = 1:nmodes
+    Us{imode} = U.(['U', num2str(imode)]);
 end
-
-obsexample = classmeandiffs(1,:,:);
-sizeobs = size(obsexample);
-
-U1 = U.U1;
-U2 = U.U2;
-U2t = U2';
-U1t = U1';
 
 if nargin <=6
-    
-    permute_vector = [2:(length(sizeobs)), 1];
+    permute_vector = [2:(nmodes + 1), 1];
     classmeandiffstensor = permute(classmeandiffs, permute_vector);
     observationdiffstensor = permute(observationdiffs, permute_vector);
+end
+
+between_classes_projected = classmeandiffstensor;
+between_obs_projected = observationdiffstensor;
+for imode = 1:nmodes
+    between_classes_projected = tmult(between_classes_projected, Us{imode}', imode);
+    between_obs_projected = tmult(between_obs_projected, Us{imode}', imode);
+end
+
+all_inds = get_level_wise_diag_inds(K, length(nis));
+trUtBU = sum(sum(reshape(between_classes_projected(all_inds).^2, [K, length(nis)])).*nis);
+
+all_inds = get_level_wise_diag_inds(K, nobs);
+trUtWU = sum(between_obs_projected(all_inds).^2);
+
+for imode = 1:nmodes
+    
+    othermodes = setdiff(1:nmodes, imode);
+    
+    temp_projected_obs = observationdiffstensor;
+    temp_projected_classes = classmeandiffstensor;
+    for other_mode = othermodes
+        temp_projected_obs = tmult(temp_projected_obs, Us{other_mode}', other_mode);
+        temp_projected_classes = tmult(temp_projected_classes, Us{other_mode}', other_mode);
+    end
+    
+    permute_vector2 = [1:nmodes, nmodes+1];
+    permute_vector2(1) = imode;
+    permute_vector2(imode) = 1;
+    temp_projected_obs = permute(temp_projected_obs, permute_vector2);
+    temp_projected_classes = permute(temp_projected_classes, permute_vector2);
+    
+    rep_vector = ones(1, nmodes+1);
+    rep_vector(1) = mode_sizes(imode);
+    rep_vector(2:(nmodes-1)) = K;
+    rep_vector = mat2cell(rep_vector, 1, ones(1, numel(rep_vector)));
+    
+    diagonal_indices_obs = get_level_wise_diag_inds(K, nobs, nmodes);
+    between_obs_projected_diagonal = reshape(...
+        between_obs_projected(diagonal_indices_obs), [K, nobs]);
+    
+    scaled_projected_obs_nd = temp_projected_obs.*...
+        reshape(repelem(between_obs_projected_diagonal, rep_vector{:}), ...
+        [mode_sizes(imode), repmat(K, 1, nmodes-1), nobs]);
+    scaled_projected_obs_nd_sum = sum(scaled_projected_obs_nd, nmodes+1);
+    
+    
+    diagonal_indices_classes = get_level_wise_diag_inds(K, nclasses, nmodes);
+    between_classes_projected_diagonal = reshape(...
+        between_classes_projected(diagonal_indices_classes), [K, nclasses]);
+    
+    scaled_projected_classes_nd = temp_projected_classes.*...
+        reshape(repelem(between_classes_projected_diagonal.*nis, rep_vector{:}), ...
+        [mode_sizes(imode), repmat(K, 1, nmodes-1), nclasses]);
+    scaled_projected_classes_nd_sum = sum(scaled_projected_classes_nd, nmodes+1);
+    
+    G.(['U', num2str(imode)]) = -(trUtWU*2*scaled_projected_classes_nd_sum...
+        -trUtBU*2*scaled_projected_obs_nd_sum)/trUtWU^2;
     
 end
 
-if ~storeexists || ~isfield(store, 'Ap1')
-Ap1 = tmult(classmeandiffstensor,U2t,2);
-store.Ap1 = Ap1;
-else
-    Ap1 = store.Ap1;
-end
-
-if ~isfield(store, 'Bp1')
-Bp1 = tmult(observationdiffstensor,U2t,2);
-store.Bp1 = Bp1;
-else
-    Bp1 = store.Bp1;
-end
-
-if ~isfield(store, 'Ap2')
-Ap2 = tmult(classmeandiffstensor,U1t,1);
-store.Ap2 = Ap2;
-else
-    Ap2 = store.Ap2;
-end
-
-if ~isfield(store, 'Bp2')
-Bp2 = tmult(observationdiffstensor,U1t,1);
-store.Bp2 = Bp2;
-else
-    Bp2 = store.Bp2;
-end
-    
-if ~isfield(store, 'AAp1')
-AAp1 = tmult(Ap1,U1t,1);
-store.AAp1 = AAp1;
-else
-    AAp1 = store.AAp1;
-end
-
-if ~isfield(store, 'BBp1')
-BBp1 = tmult(Bp1,U1t,1);
-store.BBp1 = BBp1;
-else
-    BBp1 = store.BBp1;
-end
-
-if ~isfield(store, 'AAp2')
-AAp2 = tmult(Ap2,U2t,2);
-store.AAp2 = AAp2;
-else
-    AAp2 = store.AAp2;
-end
-
-if ~isfield(store, 'BBp2')
-BBp2 = tmult(Bp2,U2t,2);
-store.BBp2 = BBp2;
-else
-    BBp2 = store.BBp2;
-end
-
-if ~isfield(store, 'mAAp1')
-mAAp1=repmat(eye(size(AAp1,1)),[1 1 size(AAp1,3)]);
-store.mAAp1 = mAAp1;
-else
-    mAAp1 = store.mAAp1;
-end
-
-if ~isfield(store, 'mBBp1')
-mBBp1=repmat(eye(size(BBp1,1)),[1 1 size(BBp1,3)]);
-store.mBBp1 = mBBp1;
-else
-    mBBp1 = store.mBBp1;
-end
-
-if ~isfield(store, 'trUtAU')
-trUtAU = sum(squeeze(sum(sum(mAAp1.*AAp1.^2, 1), 2)).*nis');
-store.trUtAU = trUtAU;
-else
-    trUtAU = store.trUtAU;
-end
-
-if ~isfield(store, 'trUtBU')
-trUtBU = sum(sum(sum(mBBp1.*BBp1.^2)));
-store.trUtBU = trUtBU;
-else
-    trUtBU = store.trUtBU;
-end
-
-
-if ~isfield(store, 'S1') || ~isfield(store, 'S2')
-S1=zeros(size(U1));
-S2=zeros(size(U2));
-for c=1:size(Ap1,3)
-        S1=S1+Ap1(:,:,c)*diag(diag(AAp1(:,:,c)))*nis(c);
-        S2=S2+Ap2(:,:,c)'*diag(diag(AAp2(:,:,c)))*nis(c);
-end
-store.S1 = S1;
-store.S2 = S2;
-else
-    S1 = store.S1;
-    S2 = store.S2;
-end
-
-if ~isfield(store, 'T1') || ~isfield(store, 'T2')
-T1=zeros(size(U1));
-T2=zeros(size(U2));
-for o=1:size(Bp1,3)
-        T1=T1+Bp1(:,:,o)*diag(diag(BBp1(:,:,o)))';
-        T2=T2+Bp2(:,:,o)'*diag(diag(BBp2(:,:,o)));
-end
-store.T1 = T1;
-store.T2 = T2;
-else
-    T1 = store.T1;
-    T2 = store.T2;
-end
-
-G1 = -(trUtBU*2*S1-trUtAU*2*T1)/trUtBU^2;
-G2 = -(trUtBU*2*S2-trUtAU*2*T2)/trUtBU^2;
-
-G.U1 = G1;
-G.U2 = G2;
-F = -trUtAU/trUtBU;
+F = -trUtBU/trUtWU;
 
 end
