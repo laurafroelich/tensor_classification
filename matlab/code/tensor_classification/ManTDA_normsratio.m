@@ -11,21 +11,15 @@ if isa(Xs, 'cell')
     Xs = cell_array_to_nd_array(Xs);
 end
     
-sizeXs = size(Xs);
-sizeX = sizeXs(2:end); % observations assumed to run along first mode
+[nsamples, sizeX, nmodes] = get_sizes(Xs, 1); % observations assumed to run along first mode
 
-if length(sizeX) > 2
-    error(['ManTDA_normsratio.m: Input data has more than two dimensions. '...
-        'This function is only customised for two-dimensional (i.e. matrix) data.'])
-end
-
-nmodes = length(sizeX);
+Fdifftol = 1e-10;
+Udifftol = 1e-12;
 maxits = 1000;
 Us = [];
 optmeth = 'ManOpt';
 
 lowerdims = sizeX;
-
 
 usestoppingcrit = true;
 opts = [];
@@ -73,6 +67,12 @@ if isempty(Us)
     end
 end
 
+Ks = [];
+for imode = 1:nmodes
+   U.(['U', num2str(imode)]) = Us{imode};
+   Ks(imode) = size(Us{imode}, 2);
+end
+
 U.U1 = Us{1};
 U.U2 = Us{2};
 
@@ -84,7 +84,7 @@ U.U2 = Us{2};
 
 % calculate Rw and Rb
 [~, ~, Rw, Rb] = tensorsldaobj_matrixdata_normsratio(U,...
-    cmean_m_xmeans, xi_m_cmeans, nis, K1, K2);
+    cmean_m_xmeans, xi_m_cmeans, nis, Ks);
 
 opts.intialtau = -1;
 opts.mxitr = maxits;
@@ -95,19 +95,21 @@ options.maxiter = maxits;
 
 switch optmeth
     case 'ManOpt'
-        tuple.U1 = stiefelfactory(size(Us{1}, 1), size(Us{1}, 2));
-        tuple.U2 = stiefelfactory(size(Us{2}, 1), size(Us{2}, 2));
+        
+        for imode = 1:nmodes
+            tuple.(['U', num2str(imode)]) = stiefelfactory(size(Us{imode}, 1), size(Us{imode}, 2));
+        end
         manifold = productmanifold(tuple);
         problem.M = manifold;
         
         % Define the problem cost function and its Euclidean gradient.
         problem.cost  = @(U, store) mycost(U, store,...
             cmean_m_xmeans, xi_m_cmeans, nis,...
-            K1, K2, Rw, Rb);
+            Ks, Rw, Rb);
         
         problem.egrad = @(U, store) mygrad(U, store,...
             cmean_m_xmeans, xi_m_cmeans, nis,...
-            K1, K2, Rw, Rb);
+            Ks, Rw, Rb);
         
         
         % Solve.
@@ -134,8 +136,9 @@ end
 outputs.fvals = fvals;
 outputs.outs = outs;
 
-Us{1} = U.U1;
-Us{2} = U.U2;
+for imode = 1:nmodes
+   Us{imode} = U.(['U', num2str(imode)]);
+end
 
 if nargout >= 5
     Ys = tensor_projection(Xs, Us);
@@ -143,19 +146,19 @@ end
 end
 
 function [F, store] = mycost(x, store, classmeandiffs, observationdiffs,...
-    nis, K1, K2, Rw, Rb)
+    nis, Ks, Rw, Rb)
 [F, ~, ~, ~, store]...
     = tensorsldaobj_matrixdata_normsratio(x,...
-    classmeandiffs, observationdiffs, nis, K1, K2, ...
+    classmeandiffs, observationdiffs, nis, Ks, ...
     Rw, Rb, store);
 end
 
 
 function [G, store] = mygrad(x, store, classmeandiffs, observationdiffs,...
-    nis, K1, K2, Rw, Rb)
+    nis, Ks, Rw, Rb)
 [~, G, ~, ~, store]...
     = tensorsldaobj_matrixdata_normsratio(x,...
-    classmeandiffs, observationdiffs, nis, K1, K2, ...
+    classmeandiffs, observationdiffs, nis, Ks, ...
     Rw, Rb, store);
 end
 
