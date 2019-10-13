@@ -57,11 +57,11 @@ end
 
 function analytical_vs_numerical_gradient(testCase, matrix_name, ...
     objective_function)
-    p = 5;
-    q = 7;
+    p = 2;
+    q = 10;
     r = 4;
     data_dimensions = [p, q];
-    lower_dimensions = [3, 3];
+    lower_dimensions = [2, 4];
     nsamples = 100;
     [Xs, ys] = get_data(nsamples, data_dimensions);
     
