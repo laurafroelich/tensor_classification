@@ -46,41 +46,43 @@ for imode = 1:nmodes
     between_obs_projected = tmult(between_obs_projected, Us{imode}', imode);
 end
 
-%trUtBU = sum(squeeze(sum(sum(between_classes_projected.^2, 1), 2)).*nis');
+% variable name: trace(U' * between_class_scatter * U)
 trUtBU = sum(sum(reshape(between_classes_projected.^2, [prod(Ks), length(nis)])).*nis);
 
-% trace(U' * within_class_scatter * U)
-% trUtWU = sum(sum(sum(between_obs_projected.^2)));
+% variable name: trace(U' * within_class_scatter * U)
 trUtWU = between_obs_projected.^2;
 trUtWU = sum(trUtWU(:));
 
 
 for imode = 1:nmodes
-    temp_projected_classes = tmult(classmeandiffstensor,Us{2}',2);
-    temp_projected_obs = tmult(observationdiffstensor,Us{2}',2);
+    othermodes = setdiff(1:nmodes, imode);
     
-    Ap2 = tmult(classmeandiffstensor,Us{1}',1);
-    Bp2 = tmult(observationdiffstensor,Us{1}',1);
-    
-    S1=zeros([mode_sizes(1), Ks(1)]);
-    S2=zeros([mode_sizes(2), Ks(2)]);
-    for c=1:nclasses
-        S1=S1+temp_projected_classes(:,:,c)*between_classes_projected(:,:,c)'*nis(c);
-        S2=S2+Ap2(:,:,c)'*between_classes_projected(:,:,c)*nis(c);
+    temp_projected_obs = observationdiffstensor;
+    temp_projected_classes = classmeandiffstensor;
+    for other_mode = othermodes
+        temp_projected_obs = tmult(temp_projected_obs, Us{other_mode}', other_mode);
+        temp_projected_classes = tmult(temp_projected_classes, Us{other_mode}', other_mode);
     end
     
-    T1=zeros([mode_sizes(1), Ks(1)]);
-    T2=zeros([mode_sizes(2), Ks(2)]);
-    for o=1:nobs
-        T1=T1+temp_projected_obs(:,:,o)*between_obs_projected(:,:,o)';
-        T2=T2+Bp2(:,:,o)'*between_obs_projected(:,:,o);
-    end
+    permute_vector2 = [1:nmodes, nmodes+1];
+    permute_vector2(1) = imode;
+    permute_vector2(imode) = 1;
     
+    temp_projected_obs = permute(temp_projected_obs, permute_vector2);
+    between_obs_projected_permuted = permute(between_obs_projected, permute_vector2);
     
-    G1 = -(trUtWU*2*S1-trUtBU*2*T1)/trUtWU^2;
-    G2 = -(trUtWU*2*S2-trUtBU*2*T2)/trUtWU^2;
-    G.U1 = G1;
-    G.U2 = G2;
+    temp_projected_classes = permute(temp_projected_classes, permute_vector2);
+    between_classes_projected_permuted = permute(between_classes_projected, permute_vector2);
+    between_classes_projected_permuted = between_classes_projected_permuted .* ...
+        reshape(repelem(nis, prod(Ks)), [Ks, nclasses]);
+    
+    S = reshape(temp_projected_classes, [mode_sizes(imode), prod([nclasses, Ks(othermodes)])]) * ...
+        reshape(between_classes_projected_permuted, [Ks(imode), prod([nclasses, Ks(othermodes)])])';
+    
+    T = reshape(temp_projected_obs, [mode_sizes(imode), prod([nobs, Ks(othermodes)])]) * ...
+        reshape(between_obs_projected_permuted, [Ks(imode), prod([nobs, Ks(othermodes)])])';
+    
+    G.(['U', num2str(imode)]) = -(trUtWU*2*S-trUtBU*2*T)/trUtWU^2;
 end
 
 F = -trUtBU/trUtWU;
