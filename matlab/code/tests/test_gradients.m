@@ -2,7 +2,7 @@ function tests = test_gradients
     tests = functiontests(localfunctions);
 end
 
-function test_parafac_lda_gradient(testCase)
+function disable_test_parafac_lda_gradient(testCase)
     import matlab.unittest.fixtures.PathFixture
     testCase.applyFixture(PathFixture('../', 'IncludeSubfolders', true));
     testCase.applyFixture(PathFixture('../../../../matlab_additions/02582nway_models/', 'IncludeSubfolders', true));
@@ -16,7 +16,7 @@ function test_parafac_lda_gradient(testCase)
      %    @parafacldaobj_matrixdata)
 end
 
-function test_tucker_lda_gradient(testCase)    
+function disable_test_tucker_lda_gradient(testCase)    
     import matlab.unittest.fixtures.PathFixture
     testCase.applyFixture(PathFixture('../', 'IncludeSubfolders', true));
     testCase.applyFixture(PathFixture('../../../../matlab_additions/02582nway_models/', 'IncludeSubfolders', true));
@@ -30,7 +30,7 @@ function test_tucker_lda_gradient(testCase)
 end
 
 
-function test_parafac_lda_gradient_nr(testCase)    
+function disable_test_parafac_lda_gradient_nr(testCase)    
     import matlab.unittest.fixtures.PathFixture
     testCase.applyFixture(PathFixture('../', 'IncludeSubfolders', true));
     testCase.applyFixture(PathFixture('../../../../matlab_additions/02582nway_models/', 'IncludeSubfolders', true));
@@ -39,6 +39,20 @@ function test_parafac_lda_gradient_nr(testCase)
         @parafacldaobj_matrixdata_normsratio)
     analytical_vs_numerical_gradient(testCase, 'U2',...
         @parafacldaobj_matrixdata_normsratio)
+end
+
+
+function test_tucker_lda_gradient_nr(testCase)    
+    import matlab.unittest.fixtures.PathFixture
+    testCase.applyFixture(PathFixture('../', 'IncludeSubfolders', true));
+    testCase.applyFixture(PathFixture('../../../../matlab_additions/02582nway_models/', 'IncludeSubfolders', true));
+
+    analytical_vs_numerical_gradient(testCase, 'U1',...
+        @tensorsldaobj_matrixdata_normsratio)
+    analytical_vs_numerical_gradient(testCase, 'U2',...
+        @tensorsldaobj_matrixdata_normsratio)
+    %analytical_vs_numerical_gradient(testCase, 'U3',...
+    %    @tensorsldaobj_matrixdata)
 end
 
 function analytical_vs_numerical_gradient(testCase, matrix_name, ...
