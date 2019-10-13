@@ -74,7 +74,7 @@ for imode = 1:nmodes
     temp_projected_classes = permute(temp_projected_classes, permute_vector2);
     between_classes_projected_permuted = permute(between_classes_projected, permute_vector2);
     between_classes_projected_permuted = between_classes_projected_permuted .* ...
-        reshape(repelem(nis, prod(Ks)), [Ks, nclasses]);
+        reshape(repelem(nis, prod(Ks)), [Ks(permute_vector2(1:nmodes)), nclasses]);
     
     S = reshape(temp_projected_classes, [mode_sizes(imode), prod([nclasses, Ks(othermodes)])]) * ...
         reshape(between_classes_projected_permuted, [Ks(imode), prod([nclasses, Ks(othermodes)])])';
