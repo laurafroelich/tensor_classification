@@ -133,9 +133,13 @@ function test_tucker_norms_ratio_discrimination(testCase)
 
     parafac_structure = false;
     k = 2;
+    Xs = get_simple_data();
+    
+    nmodes = length(size(Xs{1}));
+    lowerdims = repmat(k, 1, nmodes);
     
     project_matrices_verify_predictions(testCase, ...
-    @(Xs, ys) ManTDA_normsratio(Xs, ys, [k, k]), ...
+    @(Xs, ys) ManTDA_normsratio(Xs, ys, lowerdims), ...
     @(Xs, Xs_test, ys, ys_test, k, Us) ...
     project_and_predict(Xs, Xs_test, ys, ys_test, k, Us, parafac_structure))
 end
