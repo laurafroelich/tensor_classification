@@ -51,17 +51,19 @@ function test_tucker_lda_gradient_nr(testCase)
         @tensorsldaobj_matrixdata_normsratio)
     analytical_vs_numerical_gradient(testCase, 'U2',...
         @tensorsldaobj_matrixdata_normsratio)
-    %analytical_vs_numerical_gradient(testCase, 'U3',...
-    %    @tensorsldaobj_matrixdata)
+    analytical_vs_numerical_gradient(testCase, 'U3',...
+        @tensorsldaobj_matrixdata_normsratio)
+    analytical_vs_numerical_gradient(testCase, 'U4',...
+        @tensorsldaobj_matrixdata_normsratio)
 end
 
 function analytical_vs_numerical_gradient(testCase, matrix_name, ...
     objective_function)
     p = 2;
-    q = 10;
+    q = 5;
     r = 4;
-    data_dimensions = [p, q];
-    lower_dimensions = [2, 4];
+    data_dimensions = [p, q, r, 5];
+    lower_dimensions = [2, 2, 3, 4];
     nsamples = 100;
     [Xs, ys] = get_data(nsamples, data_dimensions);
     
