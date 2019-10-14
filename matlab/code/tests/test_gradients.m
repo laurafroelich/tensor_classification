@@ -2,43 +2,62 @@ function tests = test_gradients
     tests = functiontests(localfunctions);
 end
 
-function disable_test_parafac_lda_gradient(testCase)
+function test_parafac_lda_gradient(testCase)
     import matlab.unittest.fixtures.PathFixture
     testCase.applyFixture(PathFixture('../', 'IncludeSubfolders', true));
     testCase.applyFixture(PathFixture('../../../../matlab_additions/02582nway_models/', 'IncludeSubfolders', true));
     testCase.applyFixture(PathFixture('../../../../matlab_additions/manopt/', 'IncludeSubfolders', true));
-        
+    
+    
+    p = 5;
+    q = 7;
+    r = 4;
+    data_dimensions = [p, q, r];
+    lower_dimensions = [3, 3, 3];
+    
     analytical_vs_numerical_gradient(testCase, 'U1',...
-        @parafacldaobj_matrixdata)
+        @parafacldaobj_matrixdata, data_dimensions, lower_dimensions)
     analytical_vs_numerical_gradient(testCase, 'U2',...
-        @parafacldaobj_matrixdata)
-     %analytical_vs_numerical_gradient(testCase, 'U3',...
-     %    @parafacldaobj_matrixdata)
+        @parafacldaobj_matrixdata, data_dimensions, lower_dimensions)
+    analytical_vs_numerical_gradient(testCase, 'U3',...
+        @parafacldaobj_matrixdata, data_dimensions, lower_dimensions)
 end
 
-function disable_test_tucker_lda_gradient(testCase)    
+function test_tucker_lda_gradient(testCase)    
     import matlab.unittest.fixtures.PathFixture
     testCase.applyFixture(PathFixture('../', 'IncludeSubfolders', true));
     testCase.applyFixture(PathFixture('../../../../matlab_additions/02582nway_models/', 'IncludeSubfolders', true));
 
+    
+    p = 5;
+    q = 7;
+    r = 4;
+    data_dimensions = [p, q, r];
+    lower_dimensions = [3, 4, 2];
+    
     analytical_vs_numerical_gradient(testCase, 'U1',...
-        @tensorsldaobj_matrixdata)
+        @tensorsldaobj_matrixdata, data_dimensions, lower_dimensions)
     analytical_vs_numerical_gradient(testCase, 'U2',...
-        @tensorsldaobj_matrixdata)
-    %analytical_vs_numerical_gradient(testCase, 'U3',...
-    %    @tensorsldaobj_matrixdata)
+        @tensorsldaobj_matrixdata, data_dimensions, lower_dimensions)
+    analytical_vs_numerical_gradient(testCase, 'U3',...
+        @tensorsldaobj_matrixdata, data_dimensions, lower_dimensions)
 end
 
 
-function disable_test_parafac_lda_gradient_nr(testCase)    
+function test_parafac_lda_gradient_nr(testCase)    
     import matlab.unittest.fixtures.PathFixture
     testCase.applyFixture(PathFixture('../', 'IncludeSubfolders', true));
     testCase.applyFixture(PathFixture('../../../../matlab_additions/02582nway_models/', 'IncludeSubfolders', true));
 
+    p = 5;
+    q = 7;
+    data_dimensions = [p, q];
+    lower_dimensions = [3, 3];
+    
     analytical_vs_numerical_gradient(testCase, 'U1',...
-        @parafacldaobj_matrixdata_normsratio)
+        @parafacldaobj_matrixdata_normsratio, data_dimensions, lower_dimensions)
     analytical_vs_numerical_gradient(testCase, 'U2',...
-        @parafacldaobj_matrixdata_normsratio)
+        @parafacldaobj_matrixdata_normsratio, data_dimensions, lower_dimensions)
 end
 
 
@@ -47,23 +66,22 @@ function test_tucker_lda_gradient_nr(testCase)
     testCase.applyFixture(PathFixture('../', 'IncludeSubfolders', true));
     testCase.applyFixture(PathFixture('../../../../matlab_additions/02582nway_models/', 'IncludeSubfolders', true));
 
+    p = 5;
+    q = 7;
+    r = 4;
+    data_dimensions = [p, q, r];
+    lower_dimensions = [3, 4, 2];
+    
     analytical_vs_numerical_gradient(testCase, 'U1',...
-        @tensorsldaobj_matrixdata_normsratio)
+        @tensorsldaobj_matrixdata_normsratio, data_dimensions, lower_dimensions)
     analytical_vs_numerical_gradient(testCase, 'U2',...
-        @tensorsldaobj_matrixdata_normsratio)
+        @tensorsldaobj_matrixdata_normsratio, data_dimensions, lower_dimensions)
     analytical_vs_numerical_gradient(testCase, 'U3',...
-        @tensorsldaobj_matrixdata_normsratio)
-    analytical_vs_numerical_gradient(testCase, 'U4',...
-        @tensorsldaobj_matrixdata_normsratio)
+        @tensorsldaobj_matrixdata_normsratio, data_dimensions, lower_dimensions)
 end
 
 function analytical_vs_numerical_gradient(testCase, matrix_name, ...
-    objective_function)
-    p = 2;
-    q = 5;
-    r = 4;
-    data_dimensions = [p, q, r, 5];
-    lower_dimensions = [2, 2, 3, 4];
+    objective_function, data_dimensions, lower_dimensions)
     nsamples = 100;
     [Xs, ys] = get_data(nsamples, data_dimensions);
     
