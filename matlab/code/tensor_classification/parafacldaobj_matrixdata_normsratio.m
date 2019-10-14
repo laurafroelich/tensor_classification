@@ -80,8 +80,14 @@ for imode = 1:nmodes
     permute_vector2 = [1:nmodes, nmodes+1];
     permute_vector2(1) = imode;
     permute_vector2(imode) = 1;
+    
     temp_projected_obs = permute(temp_projected_obs, permute_vector2);
+    between_obs_projected_permuted = permute(between_obs_projected, permute_vector2);
+    
     temp_projected_classes = permute(temp_projected_classes, permute_vector2);
+    between_classes_projected_permuted = permute(between_classes_projected, permute_vector2);
+    between_classes_projected_permuted = between_classes_projected_permuted .* ...
+        reshape(repelem(nis, prod(Ks)), [Ks, nclasses]);
     
     rep_vector = ones(1, nmodes+1);
     rep_vector(1) = mode_sizes(imode);
@@ -90,25 +96,29 @@ for imode = 1:nmodes
     
     diagonal_indices_obs = get_level_wise_diag_inds(K, nobs, nmodes);
     between_obs_projected_diagonal = reshape(...
-        between_obs_projected(diagonal_indices_obs), [K, nobs]);
+        between_obs_projected_permuted(diagonal_indices_obs), [K, nobs]);
     
     scaled_projected_obs_nd = temp_projected_obs.*...
         reshape(repelem(between_obs_projected_diagonal, rep_vector{:}), ...
         [mode_sizes(imode), repmat(K, 1, nmodes-1), nobs]);
-    scaled_projected_obs_nd_sum = sum(scaled_projected_obs_nd, nmodes+1);
+    scaled_projected_obs_nd_sum = sum(scaled_projected_obs_nd, 3:nmodes+1);
     
     
     diagonal_indices_classes = get_level_wise_diag_inds(K, nclasses, nmodes);
     between_classes_projected_diagonal = reshape(...
-        between_classes_projected(diagonal_indices_classes), [K, nclasses]);
+        between_classes_projected_permuted(diagonal_indices_classes), [K, nclasses]);
     
     scaled_projected_classes_nd = temp_projected_classes.*...
-        reshape(repelem(between_classes_projected_diagonal.*nis, rep_vector{:}), ...
+        reshape(repelem(between_classes_projected_diagonal, ..., 
+        rep_vector{:}), ...
         [mode_sizes(imode), repmat(K, 1, nmodes-1), nclasses]);
-    scaled_projected_classes_nd_sum = sum(scaled_projected_classes_nd, nmodes+1);
+    scaled_projected_classes_nd_sum = sum(scaled_projected_classes_nd, 3:nmodes+1);
     
     G.(['U', num2str(imode)]) = -(trUtWU*2*scaled_projected_classes_nd_sum...
         -trUtBU*2*scaled_projected_obs_nd_sum)/trUtWU^2;
+   
+    
+    
     
 end
 

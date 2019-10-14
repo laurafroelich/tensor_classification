@@ -38,11 +38,11 @@ end
 if ~storeexists || ~isfield(store, 'Rw') || ~isfield(store, 'Rb')
     
     if nargin < 7
-
+        
         permute_vector_move_obs_to_last_mode = [2:(nmodes+1), 1]; % move observations to run along last mode
         classmeandiffstensor = permute(classmeandiffs, permute_vector_move_obs_to_last_mode);
         observationdiffstensor = permute(observationdiffs, permute_vector_move_obs_to_last_mode);
-
+        
         Rw =observationdiffstensor;
         
         Rb = classwise_scalar_multiply(classmeandiffstensor, sqrt(nis));
@@ -50,6 +50,7 @@ if ~storeexists || ~isfield(store, 'Rw') || ~isfield(store, 'Rb')
     store.Rw = Rw;
     store.Rb = Rb;
 end
+
 Rw = store.Rw;
 Rb = store.Rb;
 
@@ -63,70 +64,39 @@ end
 
 permute_vector = [nmodes:-1:1 nmodes+1];
 
-if ~isfield(store, 'QtRw')
-    QtRw = Rw;
-    for imode = 1:nmodes
-        QtRw = tmult(QtRw, Us{imode}', imode);
-    end
-    
-    QtRw = permute(QtRw, permute_vector);
-    QtRw = reshape(QtRw, prod(Ks), nobs);
-    store.QtRw = QtRw;
-else
-    QtRw = store.QtRw;
+QtRw = Rw;
+for imode = 1:nmodes
+    QtRw = tmult(QtRw, Us{imode}', imode);
 end
 
-if ~isfield(store, 'QtRb')
-    QtRb = Rb;
-    for imode = 1:nmodes 
-        QtRb = tmult(QtRb, Us{imode}', imode);
-    end
-    QtRb = permute(QtRb, permute_vector);
-    QtRb = reshape(QtRb, prod(Ks), nclasses);
-    store.QtRb = QtRb;
-else
-    QtRb = store.QtRb;
-end
+QtRw = permute(QtRw, permute_vector);
+QtRw = reshape(QtRw, prod(Ks), nobs);
 
-if ~isfield(store, 'QtWQ')
-    QtWQ = QtRw*QtRw';
-    store.QtWQ = QtWQ;
-else
-    QtWQ = store.QtWQ;
+QtRb = Rb;
+for imode = 1:nmodes
+    QtRb = tmult(QtRb, Us{imode}', imode);
 end
+QtRb = permute(QtRb, permute_vector);
+QtRb = reshape(QtRb, prod(Ks), nclasses);
 
-if ~isfield(store, 'QtBQ')
-    QtBQ = QtRb*QtRb';
-    store.QtBQ = QtBQ;
-else
-    QtBQ = store.QtBQ;
-end
+QtWQ = QtRw*QtRw';
 
-if ~isfield(store, 'QtWQinvQtBQ')
-    QtWQinvQtBQ = (QtWQ)\(QtBQ);
-    store.QtWQinvQtBQ = QtWQinvQtBQ;
-else
-    QtWQinvQtBQ = store.QtWQinvQtBQ;
-end
+QtBQ = QtRb*QtRb';
+
+QtWQinvQtBQ = (QtWQ)\(QtBQ);
 
 F = trace(QtWQinvQtBQ);
 
-if ~isfield(store, 'FdwrtQ')
-    
-    if mode_size_product < nobs % perform multiplication in fastest order
-        FdwrtQ = (-2*(reshape(permute(Rw, permute_vector), ...
-            mode_size_product, nobs)*QtRw')*QtWQinvQtBQ + ...
-            2*reshape(permute(Rb, permute_vector), ...
-            mode_size_product, nclasses)*QtRb')/QtWQ;
-    else
-        FdwrtQ = (-2*reshape(permute(Rw, permute_vector), ...
-            mode_size_product, nobs)*(QtRw'*QtWQinvQtBQ) + ...
-            2*reshape(permute(Rb, permute_vector), ...
-            mode_size_product, nclasses)*QtRb')/QtWQ;
-    end
-    store.FdwrtQ = FdwrtQ;
+if mode_size_product < nobs % perform multiplication in fastest order
+    FdwrtQ = (-2*(reshape(permute(Rw, permute_vector), ...
+        mode_size_product, nobs)*QtRw')*QtWQinvQtBQ + ...
+        2*reshape(permute(Rb, permute_vector), ...
+        mode_size_product, nclasses)*QtRb')/QtWQ;
 else
-    FdwrtQ = store.FdwrtQ;
+    FdwrtQ = (-2*reshape(permute(Rw, permute_vector), ...
+        mode_size_product, nobs)*(QtRw'*QtWQinvQtBQ) + ...
+        2*reshape(permute(Rb, permute_vector), ...
+        mode_size_product, nclasses)*QtRb')/QtWQ;
 end
 
 % Use this permutation vector to change the order of modes such that
@@ -142,7 +112,7 @@ end
 
 for imode=1:nmodes
     
-    cost_derivative_new_size = [mode_sizes(end:-1:1), Ks];
+    cost_derivative_new_size = [mode_sizes(end:-1:1), Ks(end:-1:1)];
     cost_derivative_2d_shape = mode_sizes.*Ks;
     
     TTT=reshape(...
