@@ -78,18 +78,10 @@ if isempty(Us)
     end
 end
 
-
-U.U1 = Us{1};
-U.U2 = Us{2};
-
-[N, K1] = size(U.U1);
-[M, K2] = size(U.U2);
-if false
-[N, K1] = size(Us{1});
-[M, K2] = size(Us{2});
-U = zeros(N+M, K1+K2);
-U(1:N, 1:K1) = Us{1};
-U((N+1):end, (K1+1):end) = Us{2};
+Ks = [];
+for imode = 1:nmodes
+   U.(['U', num2str(imode)]) = Us{imode};
+   Ks(imode) = size(Us{imode}, 2);
 end
 
 [cmean_m_xmeans, xi_m_cmeans, nis] = classbased_differences(Xs, classes);
@@ -97,7 +89,7 @@ end
 
 % calculate Rw and Rb
 [~, ~, Rw, Rb] = parafacldaobj_matrixdata_normsratio(U,...
-    cmean_m_xmeans, xi_m_cmeans, nis, K1, K2);
+    cmean_m_xmeans, xi_m_cmeans, nis, lowerdims);
 
 opts.intialtau = -1;
 opts.mxitr = maxits;
@@ -106,21 +98,20 @@ options.maxiter = maxits;
 
 switch optmeth
     case 'ManOpt'
-        %manifold = stiefelfactory(size(U, 1), size(U, 2));
-        
-        tuple.U1 = stiefelfactory(size(Us{1}, 1), size(Us{1}, 2));
-        tuple.U2 = stiefelfactory(size(Us{2}, 1), size(Us{2}, 2));
+        for imode = 1:nmodes
+            tuple.(['U', num2str(imode)]) = stiefelfactory(size(Us{imode}, 1), size(Us{imode}, 2));
+        end
         manifold = productmanifold(tuple);
         problem.M = manifold;
         
         % Define the problem cost function and its Euclidean gradient.
         problem.cost  = @(U, store) mycost(U, store,...
             cmean_m_xmeans, xi_m_cmeans, nis,...
-            K1, K2, Rw, Rb);
+            lowerdims, Rw, Rb);
         
         problem.egrad = @(U, store) mygrad(U, store,...
             cmean_m_xmeans, xi_m_cmeans, nis,...
-            K1, K2, Rw, Rb);
+            lowerdims, Rw, Rb);
         
         
         % Solve.
@@ -130,13 +121,13 @@ switch optmeth
     case 'bo13'
         [U, outs] = OptStiManAFBB_myvariant(U,...
             @parafacldaobj_matrixdata_normsratio, opts, cmean_m_xmeans, xi_m_cmeans,...
-            nis, K1, K2, Rw, Rb);
+            nis, lowerdims, Rw, Rb);
         fvals = outs.FArray;
         
     case 'wen12'
         [U, outs] = OptStiefelGBB_myvariant(U,...
             @parafacldaobj_matrixdata_normsratio, opts, cmean_m_xmeans, xi_m_cmeans,...
-            nis, K1, K2, Rw, Rb);
+            nis, lowerdims, Rw, Rb);
         fvals = outs.fvals;
         
     otherwise
@@ -145,9 +136,6 @@ end
 
 outputs.fvals = fvals;
 outputs.outs = outs;
-
-%Us{1} = U(1:N, 1:K1);
-%Us{2} = U((N+1):end, (K1+1):end);
 
 Us{1} = U.U1;%(1:N, 1:K1);
 Us{2} = U.U2;%((N+1):end, (K1+1):end);
@@ -169,19 +157,19 @@ end
 end
 
 function [F, store] = mycost(x, store, classmeandiffs, observationdiffs,...
-    nis, K1, K2, Rw, Rb)
+    nis, lowerdims, Rw, Rb)
 [F, ~, ~, ~, store]...
     = parafacldaobj_matrixdata_normsratio(x,...
-    classmeandiffs, observationdiffs, nis, K1, K2, ...
+    classmeandiffs, observationdiffs, nis, lowerdims, ...
     Rw, Rb, store);
 end
 
 
 function [G, store] = mygrad(x, store, classmeandiffs, observationdiffs,...
-    nis, K1, K2, Rw, Rb)
+    nis, lowerdims, Rw, Rb)
 [~, G, ~, ~, store]...
     = parafacldaobj_matrixdata_normsratio(x,...
-    classmeandiffs, observationdiffs, nis, K1, K2, ...
+    classmeandiffs, observationdiffs, nis, lowerdims, ...
     Rw, Rb, store);
 end
 
