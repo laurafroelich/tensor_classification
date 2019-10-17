@@ -1,11 +1,12 @@
 addpath(genpath('code/'))
-addpath('../matlab_additions/immoptibox/')
-addpath(('../matlab_additions/gridLegend_v1.4/'))
+addpath('../../matlab_additions/immoptibox/')
+addpath(('../../matlab_additions/gridLegend_v1.4/'))
+addpath(('../../matlab_additions/export_fig/'))
 run('colsandlinestyles.m')
-%savefig = false;
 
-commitid = ''; %'d544d947b1e29f1648f3685e0a1de5903fec08c3';
+commitid = 'cebe70d0becef29b49bf9b53a5a9c1b03c3b1a6d'; %'d544d947b1e29f1648f3685e0a1de5903fec08c3';
 load(['results/', commitid, '/aucs.mat'])
+savefig = true;
 %% check all data is there
 legend_position = [0.8 0.59 0.095 0.3];
 aucs = [];
