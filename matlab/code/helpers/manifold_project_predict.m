@@ -49,10 +49,15 @@ end
 
 Us = results{best_solution}.Us;
 
+mode_sizes = [];
+for imode = 1:length(Us)
+    mode_sizes(imode) = size(Us{imode}, 2);
+end
+
 if isequal(fun, @ManPDA_normsratio) || isequal(fun, @ManPDA)
-predictions = project_and_predict(x_train, x_test, y_train, y_test, ncomps, Us, true);
+predictions = project_and_predict(x_train, x_test, y_train, y_test, mode_sizes, Us, true);
 else
-predictions = project_and_predict(x_train, x_test, y_train, y_test, ncomps, Us);    
+predictions = project_and_predict(x_train, x_test, y_train, y_test, mode_sizes, Us);    
 end
 
 [~, ~, ~, auc] = perfcurve(y_test, predictions(:, 2), 2);

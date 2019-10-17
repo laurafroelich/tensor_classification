@@ -47,7 +47,7 @@ for isample = 1:nobs
     if iscell(x_projected)
         % use linear indices to get diagonal elements, as given here:
         % https://stackoverflow.com/questions/5598900/how-can-i-index-the-diagonals-of-a-3-d-matrix-in-matlab
-        if k == length(ncomps)
+        if length(ncomps) == 2 % for matrix observations
         inds = get_diagonal_indices(k, length(ncomps));
         else
         inds = diag(cumsum([1:(k+1):k^2; k^2.*ones(k-1,k)]));
