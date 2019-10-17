@@ -29,7 +29,12 @@ end
 
 Us = results{best_solution}.Us;
 
-predictions = project_and_predict(x_train, x_test, y_train, y_test, ncomps, Us);
+mode_sizes = [];
+for imode = 1:length(Us)
+    mode_sizes(imode) = size(Us{imode}, 2);
+end
+
+predictions = project_and_predict(x_train, x_test, y_train, y_test, mode_sizes, Us);
 
 [~, ~, ~, auc] = perfcurve(y_test, predictions(:, 2), 2);
 

@@ -34,9 +34,21 @@ for iit = 1:nrandinits
         nparams = 1+I*ncomps+J*ncomps;
     end
     x0 = randn(nparams, 1)*1e-5;
+    
+    %https://se.mathworks.com/matlabcentral/answers/149059-how-do-i-invoke-a-shadowed-core-matlab-function-not-built-in-from-an-overloaded-function-of-same
+    this = ['linesearch', '.m']; % the name of function in MATLAB we are shadowing
+    list = which(this, '-all'); % find all the functions which shadow it
+    f = strfind(list, 'immoptibox'); % locate 1st in list under matlabroot
+    correct_cell = find(~cellfun(@isempty,f));
+    linesearch_path = list{correct_cell};
+    [immoptibox_path, ~, ~] = fileparts(linesearch_path);
+    
+    here = cd(immoptibox_path); % temporarily switch to the containing folder
     tic
     [X, info, perf] = ucminf(fun, x0, opts, [], Xsmat_train, y_train-1, ncomps);
     t = toc;
+    
+    cd(here); % go back to where we came from
     
     finalxvector = X(:, end);
     

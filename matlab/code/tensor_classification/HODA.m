@@ -84,7 +84,7 @@ if nargout >= 2
     
     Ustruct.U1 = Us{1};
     Ustruct.U2 = Us{2};
-    objfuncval = tensorsldaobj_matrixdata_normsratio(Ustruct, classmeandiffs, observationdiffs, nis, lowerdims(1), lowerdims(2));
+    objfuncval = tensorsldaobj_matrixdata_normsratio(Ustruct, classmeandiffs, observationdiffs, nis, lowerdims);
     if nargout >= 3
         Ys = tensor_projection(Xs, Us);
     end
