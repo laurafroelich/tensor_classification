@@ -9,7 +9,15 @@ Currently, the implementations are in Matlab code. The long term plan is to tran
 
 
 # Methods
+
+
+The projection methods find optimal projections that separate observations from different classes maximally. Hence the projection matrices found by the projection methods can be used to project each higher-order observation into a smaller space, and its values in that space can be used for classification.
+
+The direct classification methods perform projection and classification in one step, by evaluating an expression similar to that in logistic regression, but using tensor multiplication to arrive at a scalar value in the exponents. For the direct classification methods, we have only implemented versions that work for matrix observations.
+
 ## Projection methods that optimise all modes at once by leveraging manifold optimisation
+
+We propose four ways to optimise a projection over a manifold in [3]. Two of the methods assume the Tucker structure and two of the methods assume the PARAFAC structure for interactions between modes. Furthermore, two of the methods optimise a ratio of two traces whereas the other two methods optimise the trace of the ratio of two matrices. For further details see [3] or [5].
 
 ## Mode-alternating projection methods
 The implemented projection methods that alternate between modes during optimisation are: 
@@ -18,9 +26,12 @@ The implemented projection methods that alternate between modes during optimisat
 * Constrained Multilinear Discriminant Analysis [2] (CMDA)
 * Direct General Tensor Discriminant Analysis [2] (DGTDA)
 * DATER (the same as DATEReig, but optimised using the standard  eigenvalue problem [2])
-* Higher Order Discriminant Analysis (HODA)
+* Higher Order Discriminant Analysis [4] (HODA)
 
 ## Direct classification methods
+
+* Bilinear discriminant component analysis [6] (BDCA, PARAFAC structure)
+* BDCA with Tucker structure, as described in [3] and [5]
 
 # Dependencies
 
@@ -62,3 +73,10 @@ doi: 10.1109/CVPR.2005.131
 doi: 10.1109/TPAMI.2014.2342214
 
 [3] Frølich, L., Andersen, T. & Mørup, M. Rigorous optimisation of multilinear discriminant analysis with Tucker and PARAFAC structures. BMC Bioinformatics 19, 197 (2018) doi:10.1186/s12859-018-2188-0 (https://rdcu.be/bWwIL)
+
+[4] Phan A. H, Cichocki A. Tensor decompositions for feature extraction and classification of high dimensional datasets. Nonlinear Theory Appl IEICE. 2010; 1(1):37–68
+
+[5] Decomposition and classification of electroencephalography data. / Frølich, Laura.
+Kgs. Lyngby : Technical University of Denmark, 2016. 208 p. (DTU Compute PHD-2016; No. 408). (https://orbit.dtu.dk/en/publications/decomposition-and-classification-of-electroencephalography-data(35de6ca8-d5a6-467b-88d9-a0d97bbe4685)/export.html)
+
+[6] M. Dyrholm, C. Christoforou, and L. C. Parra, “Bilinear discriminant component analysis,” The Journal of Machine Learning Research, vol. 8, pp. 1097–1111, 2007.
