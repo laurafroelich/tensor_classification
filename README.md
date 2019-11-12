@@ -33,6 +33,9 @@ The implemented projection methods that alternate between modes during optimisat
 * Bilinear discriminant component analysis [6] (BDCA, PARAFAC structure)
 * BDCA with Tucker structure, as described in [3] and [5]
 
+# Implementations
+For more details on implementation in different languages, please see the README.md file located in each language folder.
+
 # Dependencies
 
 ## Matlab
@@ -44,6 +47,10 @@ The implemented projection methods that alternate between modes during optimisat
 * immoptibox http://www2.imm.dtu.dk/projects/immoptibox/
 
 * N-Way toolbox by Rasmus Bro & Claus A. Andersson, available at http://www.models.life.ku.dk/nwaytoolbox
+
+* gridLegend_v1.4 - only used in plot_comparisons.m
+
+* export_fig - only used in plot_comparisons.m
 
 * Code assumes Matalb R2018b or higher
 
