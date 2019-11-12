@@ -2,7 +2,8 @@ addpath(genpath('code/'))
 addpath('../../matlab_additions/immoptibox/')
 addpath(('../../matlab_additions/gridLegend_v1.4/'))
 addpath(('../../matlab_additions/export_fig/'))
-run('colsandlinestyles.m')
+
+run('code/colsandlinestyles.m')
 
 commitid = 'cebe70d0becef29b49bf9b53a5a9c1b03c3b1a6d'; %'d544d947b1e29f1648f3685e0a1de5903fec08c3';
 load(['results/', commitid, '/aucs.mat'])
