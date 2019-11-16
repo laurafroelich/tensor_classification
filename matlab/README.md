@@ -32,9 +32,9 @@ All methods assume that observations run along the first mode.
  * Higher Order Discriminant Analysis [4] (HODA), HODA.m
 
 * Matrix observations only (that is, 3D input tensors)
- * Optimisation over the Stiefel manifold with the PARAFAC structure enforced, and the ratio of two matrix traces as the objective function,  ManPDA_normsratio.m
- * Bilinear discriminant component analysis [6] (BDCA, PARAFAC structure), bilinear_logreg.m
- * BDCA with Tucker structure, as described in [3] and [5], bilinear_logreg_tucker.m
+  * Optimisation over the Stiefel manifold with the PARAFAC structure enforced, and the ratio of two matrix traces as the objective function,  ManPDA_normsratio.m
+  * Bilinear discriminant component analysis [6] (BDCA, PARAFAC structure), bilinear_logreg.m
+  * BDCA with Tucker structure, as described in [3] and [5], bilinear_logreg_tucker.m
 
 # Usage
 
