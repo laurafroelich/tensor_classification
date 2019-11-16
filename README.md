@@ -2,7 +2,7 @@
 
 This repository contains code for classifying tensors using different tensor projection and classification methods. Most of the implementations support tensors with arbitrarily many modes.
 
-In particular, implementations of four novel methods, described in "Rigorous optimisation of multilinear discriminant analysis with Tucker and PARAFAC structures" [3], are included. All except one work for arbitrarily sized tensors.
+In particular, implementations of four novel methods, described in "Rigorous optimisation of multilinear discriminant analysis with Tucker and PARAFAC structures" [3], are included.
 
 Currently, the implementations are in Matlab code. The long term plan is to translate the code to other languages such as Python, R, Scala, and possibly others, and also to support tensors with arbitrarily many modes for all methods. I would be more than happy to review pull requests towards this goal.
 
