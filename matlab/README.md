@@ -22,14 +22,14 @@ All methods assume that observations run along the first mode.
 
 ## Sizes allowed in implementations
 * Arbitrarily sized input tensors
- * Optimisation over the Stiefel manifold with the Tucker structure enforced, and the trace of the ratio of two matrices as the objective function, ManTDA.m
- * Optimisation over the Stiefel manifold with the Tucker structure enforced, and the ratio of two matrix traces as the objective function, ManTDA_normsratio.m
- * Optimisation over the Stiefel manifold with the PARAFAC structure enforced, and the trace of the ratio of two matrices as the objective function, ManPDA.m
- * Discriminant Analysis Tensor Representation [1] (DATEReig, with the generalised eigenvalue problem formulation), DATEReig.m
- * Constrained Multilinear Discriminant Analysis [2] (CMDA), CMDA.m
- * Direct General Tensor Discriminant Analysis [2] (DGTDA), DGTDA.m
- * DATER (the same as DATEReig, but optimised using the standard  eigenvalue problem [2]), DATER.m
- * Higher Order Discriminant Analysis [4] (HODA), HODA.m
+  * Optimisation over the Stiefel manifold with the Tucker structure enforced, and the trace of the ratio of two matrices as the objective function, ManTDA.m
+  * Optimisation over the Stiefel manifold with the Tucker structure enforced, and the ratio of two matrix traces as the objective function, ManTDA_normsratio.m
+  * Optimisation over the Stiefel manifold with the PARAFAC structure enforced, and the trace of the ratio of two matrices as the objective function, ManPDA.m
+  * Discriminant Analysis Tensor Representation [1] (DATEReig, with the generalised eigenvalue problem formulation), DATEReig.m
+  * Constrained Multilinear Discriminant Analysis [2] (CMDA), CMDA.m
+  * Direct General Tensor Discriminant Analysis [2] (DGTDA), DGTDA.m
+  * DATER (the same as DATEReig, but optimised using the standard  eigenvalue problem [2]), DATER.m
+  * Higher Order Discriminant Analysis [4] (HODA), HODA.m
 
 * Matrix observations only (that is, 3D input tensors)
   * Optimisation over the Stiefel manifold with the PARAFAC structure enforced, and the ratio of two matrix traces as the objective function,  ManPDA_normsratio.m
