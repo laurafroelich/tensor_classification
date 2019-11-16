@@ -52,10 +52,33 @@ To plot the results of the comparisons, make sure the current working directory 
 
 ## Fit and predict
 
-### Projection methods that optimise all modes at once by leveraging manifold optimisation
-### Mode-alternating projection methods
-### Direct classification methods
+### Projection methods
+To predict using a projection method, use the projection method to get the projection matrices. For example:
 
+Us = ManTDA(Xs, classes, lower dims)
+
+Where ´Xs´ contains the tensor observations, with observations running along the first mode. So if the observed tensors have n modes, the tensor ´Xs´ will have (n+1) modes. The vector ´classes´ contains class labels which must be given as the integers 1 and 2. The vector ´classes´ must be the same length as the first mode of ´Xs´ is long. The input ´lower_dims´ specifies the size of each observation in the projected space. Hence this vector must be of length n, i.e. the same number of modes as in the observed tensors.
+
+Once optimal projection matrices, ´Us´, have been found, these can used to project observed tensors into a lower dimensional space. This can be done as follows, where Yi is the tensor to project:
+
+nmodes = length(size(Yi))
+for jmode = 1:nmodes 
+    origdims = size(Yi);
+    Yi = Us{jmode}'*matricizing(Yi, jmode);
+    newdims  = origdims;
+    newdims(jmode) = size(Us{jmode}, 2);
+    Yi = unmatricizing(Yi, jmode, newdims);
+end
+
+Note that the above is both inefficient and unnecessarily complex. At the minimum, tmult (from CPandTucker by Morten Mørup should be used instead of multiplication and the matricizing and unmatricizing functions, also from CPandTucker).
+
+Once training data has been projected into the smaller space, the scalar values in the tensors in that small space can be used to train a standard classification method such as logistic regression.
+
+Test data can be projected using the projection matrices ´Us´ learned from the training data, resulting in scalar values that can be fed into the trained classifier to yield final classifications.
+
+
+### Direct classification methods
+Use bilinear_get_predictions, giving both training and test data as input, to train the model and get predictions for the test data. This function does not save the optimised parameters, so some code inspection and refactoring is necessary to save optimised parameters. 
 
 # Development status
 
@@ -72,3 +95,7 @@ Development will soon be stalled (end of 2019) as I will no longer have a Matlab
 * Generalise methods to handle more than two classes
 
 * Add objective-oriented layer on top of basic implementations such that objects can be fitted and then used to predict (model objects with fit and predict methods)
+
+* Write efficient code to project all observations into a lower dimensional space
+
+* Modularise fitting and predicting with the bilinear methods (bilinear_get_predictions.m)
