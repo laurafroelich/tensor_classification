@@ -1,5 +1,58 @@
 function predictions = bilinear_get_predictions(fun, x_train, x_test, ...
     y_train, ncomps, nrandinits)
+% function predictions = bilinear_get_predictions(fun, x_train, x_test, ...
+%    y_train, ncomps, nrandinits)
+%
+% Use a bilinear model to get predictions.
+%
+% This function uses ´x_train´ and ´y_train´ to optimise the parameters
+% for a bilinear predictive model, which is then applied to ´x_test´ for 
+% prediction.
+%
+% Input:
+% 
+% fun: function handle
+%      The optimisation function to use, which determines whether a 
+%      PARAFAC or a Tucker structure will be used in the model. Allowed
+%      values are: 
+%      - @bilinear_logreg, to use the PARAFAC structure
+%      - @bilinear_logreg_tucker to use the Tucker structure
+% x_train: 3D array or cell array containing equally sized matrices
+%          If a cell array, each cell must contain a matrix corresponding
+%          to an observation. The first dimension of the cell array must
+%          be the number of observations, and the second must be 1.
+%          If a 3D array, observations must run along the first mode, such
+%          that the length of the first mode is the number of observations.
+% x_test: cell array
+%         Each cell must contain a matrix corresponding to an observation. 
+%         The first dimension of the cell array must be the number of 
+%         observations, and the second must be 1. If ´x_test´ is not a cell
+%         array, ´x_train´ will be used in its place, and predictions will
+%         be for the training data.
+% y_train: vector
+%          Class labels for each observation in the training data. The
+%          class labels must be the integers 1 and 2.
+% ncomps: integer
+%         The number of components to use in the lower space. The same
+%         number is used for each mode in the current implementation.
+% nrandinits: integer
+%             The number of random initialisations to start from. The
+%             initialisation that resulted in the lowest objective function
+%             value is used in the final result.
+%
+% See the following reference for details on the bilinear model with the
+% PARAFAC structure:
+% M. Dyrholm, C. Christoforou, and L. C. Parra, 
+% ?Bilinear discriminant component analysis,? 
+% The Journal of Machine Learning Research, vol. 8, pp. 1097?1111, 2007.
+%
+% See the following reference for a description of our modification of the
+% bilinear model, with the Tucker structure:
+% Frølich, L., Andersen, T. & Mørup, M. 
+% Rigorous optimisation of multilinear discriminant analysis with Tucker 
+% and PARAFAC structures. BMC Bioinformatics 19, 197 (2018) 
+% doi:10.1186/s12859-018-2188-0 (https://rdcu.be/bWwIL)
+    
 if isequal(fun, @bilinear_logreg) || isequal(fun, @bilinear_logreg_tucker)
 else
     error(['direct_predict.m: function handle given as ', ...
