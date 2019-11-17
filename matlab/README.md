@@ -99,3 +99,7 @@ Development will soon be stalled (end of 2019) as I will no longer have a Matlab
 * Write efficient code to project all observations into a lower dimensional space
 
 * Modularise fitting and predicting with the bilinear methods (bilinear_get_predictions.m)
+
+* Modify bilinear_get_predictions.m so that the input ´x_test´ does not have to be a cell array, but can also be 3D array, although ideally the function should be split into a fit function and a predict function.
+
+* Allow the Tucker version of the bilinear method to use different numbers of components in the two modes.
