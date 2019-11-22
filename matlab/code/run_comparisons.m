@@ -5,8 +5,6 @@ addpath('../../matlab_additions/02582nway_models/')
 addpath(genpath('../../matlab_additions/nway331/'))
 addpath(genpath('../../matlab_additions/manopt/'))
 
-run('colsandlinestyles.m')
-savefig = false;
 
 n_rows = 10;
 n_cols = 80;
