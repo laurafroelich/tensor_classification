@@ -1,0 +1,8 @@
+# Python virtual environment
+env/
+
+# PyCharm project folder
+.idea/
+
+# Build
+*.egg-info/
