@@ -22,20 +22,19 @@ class ManifoldDiscrimantAnalysis(ABC):
         """
         self.store ={'Rw': Rw, 'Rb': Rb, 'QtRb': None,
                      'QtRw':  None, 'QtBQ': None, 'QtWQ': None, 'QtWQinvQtBQ': None}
-        self.Fdifftol = Fdifftol = 10**(-10)
-        self.Udifftol = Udifftol = 10**(-12)
+        self.f_diff_tol = 10 ** (-10)
+        self.u_diff_tol = 10 ** (-12)
         self.MyCost = None
         self.rotations = None
 
-    def set_tolerances(self, Fdifftol=10**(-10), Udifftol=10**(-12)):
-        self.Fdifftol = Fdifftol
-        self.Udifftol = Udifftol
+    def set_tolerances(self, f_diff_tol=10 ** (-10), u_diff_tol=10 ** (-12)):
+        self.f_diff_tol = f_diff_tol
+        self.u_diff_tol = u_diff_tol
 
     # This is a virtual function that any inheriting subclass should realize
     @abstractmethod 
-    def object_matrix_data(self, classmeandiffs, observationdiffs, nis, K1, K2, ):
-        return(None)
-
+    def object_matrix_data(self, class_mean_diffs, observation_diffs, nis, k1, k2, ):
+        return None
 
     @abstractmethod
     def my_cost(self):
@@ -125,8 +124,6 @@ class ManifoldDiscrimantAnalysis(ABC):
         :params: Xs: Tensor containing the input data to be transformed.
         :return: transformed_data, Tensor containing the data transformed by the optimal transformations.
         """
-
-
         rotation1 = tf.Variable(tf.placeholder(tf.float32))
         rotation2 = tf.Variable(tf.placeholder(tf.float32))
         input_data = tf.Variable(tf.placeholder(tf.float32))
@@ -164,22 +161,22 @@ class TuckerDiscriminantAnalysis(ManifoldDiscrimantAnalysis):
         else:
             print("Wrong Qt specified")
 
-        self.store[Qt]=Qt_temp
+        self.store[Qt] = Qt_temp
 
-    def object_matrix_data(self, classmeandiffs, observationdiffs, nis, K2, K1):
+    def object_matrix_data(self, class_mean_diffs, observation_diffs, nis, k2, k1):
         if self.store['Rw'] is None or self.store['Rb'] is None:
-            obsExample = classmeandiffs[0]
+            obsExample = class_mean_diffs[0]
             sizeObs = np.shape(obsExample)
             I = sizeObs[0]
             J = sizeObs[1]
             if self.store['Rw'] is None: #What if only one of them is missing? Shouldn't we still calculate the missing one? Split the tensor_classification below into two parts, one for each case. This has been done now, but not in the MATLAB tensor_classification
-                nclasses = max(np.shape(classmeandiffs)) #This is a straight-copy of the existing MATLAB tensor_classification, not sure if this is the intended behavior there either...
-                classmeandiffstensor = np.reshape(classmeandiffs, (I, J, nclasses), order="F")
+                nclasses = max(np.shape(class_mean_diffs)) #This is a straight-copy of the existing MATLAB tensor_classification, not sure if this is the intended behavior there either...
+                classmeandiffstensor = np.reshape(class_mean_diffs, (I, J, nclasses), order="F")
                 self.store['Rw']= classmeandiffstensor
 
             if self.store['Rb'] is None:
-                nobs = max(np.shape(observationdiffs))
-                observationdiffstensor = np.reshape(observationdiffs, (I, J, nobs), order="F")
+                nobs = max(np.shape(observation_diffs))
+                observationdiffstensor = np.reshape(observation_diffs, (I, J, nobs), order="F")
                 self.store['Rb'] = observationdiffstensor
 
         Rwsize = np.shape(self.store['Rw'])
@@ -190,14 +187,15 @@ class TuckerDiscriminantAnalysis(ManifoldDiscrimantAnalysis):
         M = datadims[1]
         #We proceed to calculate all relevant matrices for the optimization step.
         for j in {'QtRw', 'QtRb', 'QtWQ', 'QtBQ', 'QtWQinvQtBQ'}:
-            self.Qt_initializer(j, K2, K1, N,  M)
+            self.Qt_initializer(j, k2, k1, N, M)
 
     def my_cost(self):  # , x, store, classmeandiffs, observationdiffs, nis, K1, K2):
         self.MyCost = tf.linalg.trace(self.store['QtWQinvQtBQ'])
 
 
 class PARAFACDiscriminantAnalysis(ManifoldDiscrimantAnalysis):
-    def object_matrix_data(U, cmean_m_xmeans, xi_m_cmeans, nis, K1, K2):
-        
-        
-        return()
+    def my_cost(self):
+        pass
+
+    def object_matrix_data(U, cmean_m_xmeans, xi_m_cmeans, nis, k1, k2):
+        pass

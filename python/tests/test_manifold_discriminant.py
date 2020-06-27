@@ -80,7 +80,7 @@ def test_initialize_manifold_without_u():
 def test_calculate_set_tolerances():
     modeller = pt.TuckerDiscriminantAnalysis()
     modeller.set_tolerances(0, 0)
-    assert modeller.Fdifftol == 0, modeller.Udifftol == 0
+    assert modeller.f_diff_tol == 0, modeller.u_diff_tol == 0
 
 def test_tucker_object_data_matrix():
     pass
