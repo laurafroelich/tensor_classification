@@ -6,3 +6,6 @@ env/
 
 # Build
 *.egg-info/
+
+# Caching
+*cache/
