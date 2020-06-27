@@ -1,8 +1,7 @@
 import pytest
-from tensor_classification.classificationmethods import ManifoldDiscrimantAnalysisParafacTucker as pt
+from tensor_classification import ManifoldMethods as pt
 import numpy as np
 from numpy import random as random
-import scipy.stats as stats
 
 """
     Unit tests for python manifold discriminant analysis. 
